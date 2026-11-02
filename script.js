@@ -30,7 +30,7 @@ search.addEventListener('input', filterGames);
 
 function bindPlayButtons() { document.querySelectorAll('.play-btn').forEach(button => button.addEventListener('click', async () => {
   toast.textContent = `${button.dataset.game} üçün bağlantı yoxlanılır...`; toast.classList.add('show');
-  try { const response = await fetch('/api/launch', { method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({ gameId: button.dataset.gameId || button.dataset.game, provider: button.dataset.provider || 'pragmatic', userId: 'demo001' }) }); const result = await response.json(); toast.textContent = result.url ? 'Oyun açılır...' : (result.setupRequired ? 'API tokeni əlavə edilməlidir.' : (result.message || 'Launch cavabı alındı.')); if (result.url) window.location.href = result.url; }
+  try { const response = await fetch('/api/launch', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ gameId: button.dataset.gameId || button.dataset.game, provider: button.dataset.provider || 'pragmatic', userId: 'demo001' }) }); const result = await response.json(); toast.textContent = result.url ? 'Oyun açılır...' : (result.setupRequired ? 'API tokeni əlavə edilməlidir.' : (result.message || 'Launch cavabı alındı.')); if (result.url) openGameModal(result.url, button.dataset.game); }
   catch { toast.textContent = 'Backend serveri işləmir.'; } setTimeout(() => toast.classList.remove('show'), 3000);
 })); }
 bindPlayButtons();
@@ -75,6 +75,10 @@ function renderSlip() { slipCount.textContent = picks.length; slipItems.innerHTM
 document.querySelector('#slipToggle').addEventListener('click', () => betSlip.classList.toggle('open'));
 document.querySelector('#closeSlip').addEventListener('click', () => betSlip.classList.remove('open'));
 document.querySelector('#slipSubmit').addEventListener('click', () => { toast.textContent = 'Kupon sistemi real backend-dən sonra aktiv olacaq.'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2500); });
+const gameModal=document.querySelector('#gameModal'); const gameFrame=document.querySelector('#gameFrame');
+function openGameModal(url,title){ gameFrame.src=url; document.querySelector('#gameModalTitle').textContent=title||'Oyun'; gameModal.classList.add('open'); document.body.style.overflow='hidden'; }
+function closeGameModal(){ gameFrame.src='about:blank'; gameModal.classList.remove('open'); document.body.style.overflow=''; }
+document.querySelector('#closeGameModal').addEventListener('click',closeGameModal);
 const authModal = document.querySelector('#auth');
 document.querySelector('#profileBtn').addEventListener('click', () => authModal.classList.add('open'));
 document.querySelector('.register-btn').addEventListener('click', event => { event.preventDefault(); authModal.classList.add('open'); });

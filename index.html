@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="live-art.css" />
   <link rel="stylesheet" href="sports.css" />
   <link rel="stylesheet" href="auth-betslip.css" />
+  <link rel="stylesheet" href="game-modal.css" />
   <link rel="stylesheet" href="luxury.css" />
   <link rel="stylesheet" href="luxury-red.css" />
   <link rel="stylesheet" href="vibrant-red.css" />
@@ -125,6 +126,7 @@
   </main>
 
   <aside class="betslip" id="betSlip"><div class="betslip-head"><strong>Kuponum</strong><button id="closeSlip">×</button></div><div class="slip-items" id="slipItems"><p>Kuponunuz boşdur.<br /><small>Odds seçərək kupon yaradın.</small></p></div><div class="slip-total"><span>Ümumi əmsal</span><b id="slipTotal">0.00</b></div><button class="slip-submit" id="slipSubmit">Kuponu təsdiqlə</button><small class="slip-note">Demo görünüş · Real bahis sistemi sonra qoşulacaq</small></aside>
+  <div class="game-modal" id="gameModal"><div class="game-modal-bar"><strong>REDX PLAY</strong><span id="gameModalTitle">Oyun</span><button id="closeGameModal">×</button></div><iframe id="gameFrame" title="REDX oyun pəncərəsi" allow="fullscreen; autoplay; payment" referrerpolicy="no-referrer"></iframe></div>
   <div class="auth-modal" id="auth"><div class="auth-panel"><button class="auth-close" id="authClose">×</button><p class="eyebrow">REDX ÜZVLÜYÜ</p><h2 id="authTitle">Hesabına daxil ol</h2><form id="authForm"><input type="text" placeholder="Email və ya telefon" required /><input type="password" placeholder="Şifrə" required /><button type="submit" class="auth-submit">Daxil ol →</button></form><button class="auth-switch" id="authSwitch">Hesabın yoxdur? Qeydiyyatdan keç</button><small>Demo UI · Təhlükəsiz auth backend-i ayrıca aktivləşdiriləcək</small></div></div>
 
   <footer id="about"><div class="logo"><span>R</span>EDX<span class="logo-dot">.</span></div><p>Oyun sənin meydançandır.</p><small>© 2025 REDX PLAY. Bütün hüquqlar qorunur.</small></footer>
