@@ -30,6 +30,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, endpoint: '/api/callback/apilx', method: 'POST', message: 'API LX callback endpoint is ready. Provider callbacks must use POST.' });
     }
     if (req.method === 'GET' && parsed.pathname === '/api/providers') return sendJson(res, 200, providers);
+    if (req.method === 'GET' && parsed.pathname === '/api/games') return listGames(res, parsed.searchParams.get('provider') || process.env.APILX_PROVIDER || 'pragmatic');
     if (req.method === 'POST' && parsed.pathname === '/api/launch') return launchGame(req, res);
     if (req.method === 'POST' && parsed.pathname.startsWith('/api/callback/apilx')) return handleCallback(req, res, parsed.pathname.split('/').filter(Boolean).pop());
     if (req.method === 'GET') return serveStatic(parsed.pathname, res);
@@ -47,11 +48,18 @@ async function launchGame(req, res) {
   const config = providerConfig[provider];
   if (!config?.token || !config?.baseUrl) return sendJson(res, 503, { error: `API LX provider ${provider} is not configured yet`, setupRequired: true });
 
-  // Confirm the exact launch path and payload in API LX documentation before enabling production.
-  const upstream = await fetch(new URL(process.env.APILX_LAUNCH_PATH || '/v1/games/launch', config.baseUrl), {
+  const upstream = await fetch(new URL(process.env.APILX_LAUNCH_PATH || '/userAuth', config.baseUrl), {
     method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${config.token}`, 'x-api-token': config.token },
-    body: JSON.stringify({ provider, agentId: config.agentId, gameId: body.gameId, userId: body.userId, currency: process.env.APILX_CURRENCY, callbackUrl: process.env.APILX_CALLBACK_URL, mode: body.mode || 'real' }),
+    body: JSON.stringify({ agentID: config.agentId, userID: body.userId, lang: body.lang || 'az', gameid: Number(body.gameId), isaffiliate: false, lobbyUrl: body.lobbyUrl || process.env.APILX_LOBBY_URL || 'https://redplayco.com' }),
   });
+  const data = await upstream.json().catch(() => ({}));
+  sendJson(res, upstream.status, data);
+}
+
+async function listGames(res, provider) {
+  const config = providerConfig[provider];
+  if (!config?.token || !config?.baseUrl) return sendJson(res, 503, { error: `API LX provider ${provider} is not configured yet`, setupRequired: true });
+  const upstream = await fetch(new URL(process.env.APILX_GAMES_PATH || '/gamelist', config.baseUrl), { headers: { accept: 'application/json', authorization: `Bearer ${config.token}` } });
   const data = await upstream.json().catch(() => ({}));
   sendJson(res, upstream.status, data);
 }

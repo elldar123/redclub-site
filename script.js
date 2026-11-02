@@ -1,5 +1,5 @@
 const categories = document.querySelectorAll('.category');
-const cards = document.querySelectorAll('.game-card');
+let cards = document.querySelectorAll('.game-card');
 const search = document.querySelector('#gameSearch');
 const empty = document.querySelector('#emptyState');
 const toast = document.querySelector('#toast');
@@ -24,17 +24,12 @@ categories.forEach(button => button.addEventListener('click', () => {
 }));
 search.addEventListener('input', filterGames);
 
-document.querySelectorAll('.play-btn').forEach(button => button.addEventListener('click', async () => {
-  toast.textContent = `${button.dataset.game} üçün bağlantı yoxlanılır...`;
-  toast.classList.add('show');
-  try {
-    const response = await fetch('/api/launch', { method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({ gameId: button.dataset.game, userId: 'demo-user-001', mode: 'demo' }) });
-    const result = await response.json();
-    toast.textContent = result.setupRequired ? 'API tokeni əlavə edilməlidir.' : (result.launchUrl ? 'Oyun açılır...' : 'Launch endpoint cavabını gözləyir.');
-    if (result.launchUrl) window.location.href = result.launchUrl;
-  } catch { toast.textContent = 'Backend serveri işləmir. node server.js başladın.'; }
-  setTimeout(() => toast.classList.remove('show'), 3000);
-}));
+function bindPlayButtons() { document.querySelectorAll('.play-btn').forEach(button => button.addEventListener('click', async () => {
+  toast.textContent = `${button.dataset.game} üçün bağlantı yoxlanılır...`; toast.classList.add('show');
+  try { const response = await fetch('/api/launch', { method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({ gameId: button.dataset.gameId || button.dataset.game, userId: 'demo001' }) }); const result = await response.json(); toast.textContent = result.url ? 'Oyun açılır...' : (result.setupRequired ? 'API tokeni əlavə edilməlidir.' : (result.message || 'Launch cavabı alındı.')); if (result.url) window.location.href = result.url; }
+  catch { toast.textContent = 'Backend serveri işləmir.'; } setTimeout(() => toast.classList.remove('show'), 3000);
+})); }
+bindPlayButtons();
 
 document.querySelector('#menuToggle').addEventListener('click', () => document.querySelector('.main-nav').classList.toggle('open'));
 document.querySelector('#searchToggle').addEventListener('click', () => {
@@ -77,3 +72,9 @@ document.querySelectorAll('.slide-play').forEach(button => button.addEventListen
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2500);
 }));
+
+async function loadProviderGames() {
+  try { const response = await fetch('/api/games?provider=pragmatic'); const result = await response.json(); if (!Array.isArray(result.data) || !result.data.length) return; const grid = document.querySelector('#gameGrid'); grid.innerHTML = result.data.slice(0, 12).map(game => `<article class="game-card" data-category="arcade" data-name="${escapeHtml(game.name)}"><div class="game-visual api-game-image" style="background-image:url('${escapeAttr(game.iconurl3 || game.iconurl1 || '')}')"></div><div class="game-info"><div><h3>${escapeHtml(game.name)}</h3><p>${escapeHtml(game.vendorid || 'Casino')}</p></div><button class="play-btn" data-game="${escapeHtml(game.name)}" data-game-id="${game.gameid}">▶</button></div></article>`).join(''); cards = document.querySelectorAll('.game-card'); bindPlayButtons(); } catch { /* keep built-in catalogue */ } }
+function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+function escapeAttr(value) { return String(value || '').replace(/['"\\]/g, char => `\\${char}`); }
+loadProviderGames();
