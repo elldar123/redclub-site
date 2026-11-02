@@ -23,14 +23,15 @@ const server = http.createServer(async (req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
     if (req.method === 'GET' && parsed.pathname === '/api/health') {
-      return sendJson(res, 200, { ok: true, configured: Boolean(process.env.APILX_TOKEN), currency: process.env.APILX_CURRENCY || null });
+      const activeProvider = process.env.APILX_PROVIDER || 'pragmatic';
+      return sendJson(res, 200, { ok: true, configured: Boolean(providerConfig[activeProvider]?.token), provider: activeProvider, currency: process.env.APILX_CURRENCY || null });
     }
     if (req.method === 'GET' && parsed.pathname === '/api/callback/apilx') {
       return sendJson(res, 200, { ok: true, endpoint: '/api/callback/apilx', method: 'POST', message: 'API LX callback endpoint is ready. Provider callbacks must use POST.' });
     }
     if (req.method === 'GET' && parsed.pathname === '/api/providers') return sendJson(res, 200, providers);
     if (req.method === 'POST' && parsed.pathname === '/api/launch') return launchGame(req, res);
-    if (req.method === 'POST' && parsed.pathname === '/api/callback/apilx') return handleCallback(req, res);
+    if (req.method === 'POST' && parsed.pathname.startsWith('/api/callback/apilx')) return handleCallback(req, res, parsed.pathname.split('/').filter(Boolean).pop());
     if (req.method === 'GET') return serveStatic(parsed.pathname, res);
     sendJson(res, 404, { error: 'Route not found' });
   } catch (error) {
@@ -55,12 +56,51 @@ async function launchGame(req, res) {
   sendJson(res, upstream.status, data);
 }
 
-async function handleCallback(req, res) {
+const balances = new Map();
+const transactions = new Map();
+async function handleCallback(req, res, operation) {
   const body = await readJson(req);
-  // TODO: validate API LX signature according to the provider documentation before crediting balances.
-  console.log(`[API LX callback] ${new Date().toISOString()}`, { event: body.event, userId: body.userId });
-  sendJson(res, 200, { received: true, callbackId: crypto.randomUUID() });
+  const op = body.operation || operation;
+  const config = Object.values(providerConfig).find(item => item.agentId === body.agentID);
+  if (!config || !verifySignature(body, config.secret, op)) return sendJson(res, 200, { code: 3, message: 'Invalid Sign' });
+  const userId = body.userID;
+  if (!userId) return sendJson(res, 200, { code: 2, message: 'Invalid user id' });
+  if (!balances.has(userId)) balances.set(userId, 0);
+  let balance = balances.get(userId);
+  if (op === 'GetBalance') return sendJson(res, 200, { code: 0, message: '', balance: round(balance) });
+  const txId = body.transactionID || body.refTransactionID;
+  if (op === 'RollbackTransaction') {
+    const original = transactions.get(body.refTransactionID);
+    if (!original || original.rolledBack) return sendJson(res, 200, { code: 1, message: 'General Error' });
+    balance = round(balance - original.delta); balances.set(userId, balance); original.rolledBack = true;
+    return sendJson(res, 200, { code: 0, message: '' });
+  }
+  if (txId && transactions.has(txId)) return sendJson(res, 200, { code: 0, message: '', platformTransactionID: txId, balance: round(balance) });
+  let delta = 0;
+  if (op === 'Withdraw') delta = -Number(body.amount || 0);
+  else if (op === 'Deposit') delta = Number(body.amount || 0);
+  else if (op === 'BetWin') delta = Number(body.winAmount || 0) - Number(body.betAmount || 0);
+  else return sendJson(res, 200, { code: 2, message: 'Unknown operation' });
+  if (balance + delta < 0) return sendJson(res, 200, { code: 6, message: 'Insufficient funds' });
+  balance = round(balance + delta); balances.set(userId, balance);
+  if (txId) transactions.set(txId, { userId, delta, rolledBack: false });
+  sendJson(res, 200, { code: 0, message: '', platformTransactionID: txId || crypto.randomUUID(), balance: round(balance) });
 }
+
+function verifySignature(body, secret, operation) {
+  if (!secret || !body.sign) return false;
+  const amount = value => Number(value || 0).toFixed(2);
+  const messages = {
+    GetBalance: `${body.agentID}${body.userID}${body.gameID || ''}`,
+    Withdraw: `${body.agentID}${body.userID}${amount(body.amount)}${body.transactionID}${body.roundID}`,
+    Deposit: `${body.agentID}${body.userID}${amount(body.amount)}${body.refTransactionID}${body.transactionID}${body.roundID}`,
+    BetWin: `${body.agentID}${body.userID}${amount(body.betAmount)}${amount(body.winAmount)}${body.transactionID}${body.roundID}`,
+    RollbackTransaction: `${body.agentID}${body.userID}${body.refTransactionID}`,
+  };
+  const expected = crypto.createHmac('sha256', secret).update(messages[operation] || '').digest('hex').toUpperCase();
+  return expected.length === body.sign.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(body.sign.toUpperCase()));
+}
+function round(value) { return Math.round(Number(value) * 100) / 100; }
 
 function serveStatic(requestPath, res) {
   const clean = requestPath === '/' ? '/index.html' : requestPath;
