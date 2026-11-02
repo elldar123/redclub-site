@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loto Onlayn</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:#fff;
+background:repeating-linear-gradient(90deg,#0000 0 7px,#5a2a0a14 7px 8px,#0000 8px 19px,#ffd2a010 19px 20px),
+linear-gradient(90deg,#b86a2e,#cc7c3c 30%,#b3622a 55%,#c97839 80%,#b86a2e)}
+.app{max-width:480px;margin:0 auto;padding:8px 8px 24px}
+.bar{display:flex;justify-content:space-between;align-items:flex-start}
+.grp{display:flex;gap:6px;width:98px}.grp.r{justify-content:flex-end}
+.wb{width:46px;height:46px;border-radius:9px;border:2px solid #6b3a14;background:linear-gradient(#ecb46f,#b0702f);color:#4a2208;font-size:20px;cursor:pointer;padding:0;box-shadow:inset 0 1px 0 #ffe2b3,0 2px 3px #0006}
+.wb:active{transform:translateY(2px)}
+.keg{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2a1608;font:bold 42px Arial,sans-serif;
+background:radial-gradient(circle closest-side,#f8e8c4 0 56%,#dfa35c 59% 80%,#8a5018 92%,#4a2608 98%,transparent 100%);filter:drop-shadow(0 4px 5px #0008)}
+.keg.pop{animation:pop .4s}
+@keyframes pop{0%{transform:translateY(-30px) scale(.55) rotate(-25deg);opacity:.3}70%{transform:scale(1.08)}100%{transform:none;opacity:1}}
+.last{display:flex;gap:7px;justify-content:center;margin:8px 0 4px;min-height:36px}
+.last i{width:36px;height:36px;border-radius:50%;font:bold 14px Arial;font-style:normal;color:#3a1e08;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 40% 35%,#fbefd2,#e0a45d);border:2px solid #8a5018;box-shadow:0 2px 3px #0006}
+.info{text-align:center;font-size:13px;color:#fff3d8;text-shadow:0 1px 2px #0008;min-height:18px}
+.msg{text-align:center;font-weight:bold;font-size:17px;min-height:24px;text-shadow:0 1px 3px #000a;margin-bottom:4px}
+.av{display:flex;justify-content:space-between;gap:4px;margin:6px 0 8px}
+.av div{flex:1;text-align:center;font-size:11px;text-shadow:0 1px 2px #0008;min-width:0}
+.av b{display:flex;align-items:center;justify-content:center;position:relative;aspect-ratio:1;max-width:58px;margin:0 auto 2px;border-radius:8px;font:bold 26px Arial;border:2px solid #f6e3bd;box-shadow:0 2px 4px #0007}
+.av b.me{border-color:#ffd24a;box-shadow:0 0 0 2px #ffd24a,0 2px 4px #0007}
+.av em{position:absolute;right:-5px;top:-6px;background:#2a1608;color:#ffd24a;border-radius:9px;font:bold 11px Arial;font-style:normal;padding:1px 5px;border:1px solid #ffd24a}
+.av span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card{position:relative;background:#fff;border:1px solid #8a8a8a;margin-bottom:9px;padding-bottom:9px;box-shadow:0 3px 6px #0005}
+.grid{display:grid;grid-template-columns:repeat(9,1fr);gap:1px;background:#b9b9b9;border-bottom:1px solid #b9b9b9}
+.c{aspect-ratio:1/.9;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;position:relative;user-select:none;font:500 clamp(18px,5.8vw,27px) Arial,Helvetica,sans-serif}
+.c.n{cursor:pointer}.c.m{color:transparent}
+.c.m::after{content:"";position:absolute;inset:8%;border-radius:50%;background:radial-gradient(circle at 38% 30%,#bda2e6,#7650b0 55%,#47297b);box-shadow:0 2px 3px #0008,inset 0 -3px 4px #0004}
+.c.bad{animation:sh .3s;background:#ffd6d0}
+@keyframes sh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.tag{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font:9px Arial;color:#777;background:#fff;padding:0 4px;line-height:9px}
+.net{text-align:center;font-size:12px;margin-top:8px;color:#fff3d8;text-shadow:0 1px 2px #0008}
+.ov{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:5;padding:16px}
+.ov[hidden]{display:none}
+.panel{width:100%;max-width:360px;border-radius:14px;border:3px solid #6b3a14;background:linear-gradient(#f6e3bd,#ecd199);color:#2a1608;padding:18px;text-align:center}
+.panel h2{margin:0 0 4px;letter-spacing:.2em;color:#8a3a10}
+.panel p{margin:6px 0}
+.panel input{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:2px solid #6b3a14;background:#fffaf0;font:16px Arial;color:#2a1608}
+.panel button,dialog button{padding:10px 18px;border-radius:8px;border:2px solid #6b3a14;background:linear-gradient(#ecb46f,#b0702f);color:#3a1a06;font:bold 15px Arial;cursor:pointer;margin-top:6px}
+.plist{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.plist span{background:#fffaf0;border:1px solid #b0702f;border-radius:14px;padding:3px 10px;font-size:13px}
+dialog{border:3px solid #6b3a14;border-radius:14px;background:#fbf0d6;color:#2a1608;max-width:380px;width:90%;text-align:center}
+dialog::backdrop{background:#000a}dialog ol{text-align:left;padding-left:22px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="bar">
+<div class="grp"><button class="wb" id="snd" aria-label="Səs">🔊</button><button class="wb" id="lb" aria-label="Reytinq">🏆</button></div>
+<div class="keg" id="keg">?</div>
+<div class="grp r"><button class="wb" id="home" aria-label="Çıx">🚪</button></div>
+</div>
+<div class="last" id="last"></div>
+<div class="info" id="info"></div>
+<div class="msg" id="msg" aria-live="polite"></div>
+<div class="av" id="av"></div>
+<div id="cards"></div>
+<div class="net" id="net"></div>
+</div>
+
+<div class="ov" id="lobby">
+<div class="panel">
+<h2>LOTO</h2>
+<div id="form">
+<p>Onlayn loto: real oyunçularla oynayın</p>
+<input id="nm" maxlength="16" placeholder="Adınız" autocomplete="nickname">
+<input id="rm" maxlength="8" placeholder="Otaq kodu (dostlarla oynamaq üçün, ixtiyari)" autocapitalize="characters">
+<button id="go">Oyuna qoşul</button>
+</div>
+<div id="wait" hidden>
+<p id="lt">Oyunçular gözlənilir...</p>
+<div class="plist" id="pl"></div>
+<p id="cd" style="font-size:22px;font-weight:bold"></p>
+<p style="font-size:12px">Kifayət qədər oyunçu olmasa, kompüter oyunçular qoşulacaq.</p>
+</div>
+<p id="err" style="color:#a82a1a;font-size:13px;min-height:16px"></p>
+</div>
+</div>
+<dialog id="dlg"><h2 id="dt"></h2><div id="db"></div><p><button id="dc">Bağla</button></p></dialog>
+
+<script>
+/* ===== KONFİQURASİYA (hamısı ixtiyaridir) =====
+ window.LOTO_CONFIG = {ws:"wss://sizin-sayt.az", token:"istifadəçi sessiyası", player:"Aysel", room:""}
+ Serveriniz eyni ünvandan işləyirsə heç nə yazmaq lazım deyil.
+ DİQQƏT: gizli API açarı burada olmamalıdır, o yalnız serverin mühit dəyişənində saxlanır. */
+var CFG=Object.assign({ws:"",token:"",player:"",room:""},window.LOTO_CONFIG||{});
+function $(i){return document.getElementById(i)}
+var AC=null,mute=false;
+function beep(f,d,ty){if(mute)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=ty||"sine";o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+var COLS=["#d9822b","#c0392b","#2a7fb8","#3a9a5b","#8e5ab0","#c2527a"];
+var WS=null,S=null,pid="",joinOpts={},closing=false;
+try{pid=sessionStorage.getItem("loto_pid")||""}catch(e){}
+function wsUrl(){return CFG.ws||((location.protocol==="https:"?"wss://":"ws://")+location.host)}
+function httpBase(){return wsUrl().replace(/^ws/,"http")}
+function cnt(m){return Object.keys(m).length}
+function best(i){return S.counts[i]||0}
+
+function connect(){
+  closing=false;$("err").textContent="";
+  WS=new WebSocket(wsUrl());
+  WS.onopen=function(){WS.send(JSON.stringify({t:"join",name:joinOpts.name,room:joinOpts.room,token:CFG.token,pid:pid}))};
+  WS.onmessage=function(e){var m;try{m=JSON.parse(e.data)}catch(x){return}on(m)};
+  WS.onclose=function(){
+    if(closing)return;
+    if(S&&!S.over){$("net").textContent="Əlaqə kəsildi, yenidən qoşulur...";setTimeout(connect,2000)}
+    else{showForm("Serverlə əlaqə yoxdur");}
+  };
+}
+function showForm(err){$("lobby").hidden=false;$("form").hidden=false;$("wait").hidden=true;$("err").textContent=err||""}
+function on(m){
+  if(m.t==="joined"){pid=m.pid;try{sessionStorage.setItem("loto_pid",pid)}catch(e){}$("form").hidden=true;$("wait").hidden=false}
+  else if(m.t==="lobby"){
+    $("lt").textContent=m.code?"Otaq: "+m.code+" (kodu dostlarınıza göndərin)":"Oyunçular gözlənilir...";
+    var pl=$("pl");pl.innerHTML="";m.players.forEach(function(n){var s=document.createElement("span");s.textContent=n;pl.appendChild(s)});
+    $("cd").textContent=m.left+" san";
+  }
+  else if(m.t==="start"){
+    S={cards:m.cards,marks:[{},{},{}],players:m.players,you:m.you,counts:m.players.map(function(){return 0}),drawn:{},hist:[],score:0,over:false,pos:0,interval:m.interval,nextAt:Date.now()+2500};
+    $("lobby").hidden=true;$("msg").textContent="";$("net").textContent="";$("keg").textContent="?";refresh();
+  }
+  else if(m.t==="sync"&&S){
+    m.drawn.forEach(function(n){S.drawn[n]=1});S.hist=m.drawn.slice();S.pos=m.drawn.length;S.score=m.score;
+    m.marks.forEach(function(a,ci){a.forEach(function(n){S.marks[ci][n]=1})});
+    if(m.drawn.length)$("keg").textContent=m.drawn[m.drawn.length-1];$("net").textContent="";refresh();
+  }
+  else if(m.t==="ball"&&S){
+    S.drawn[m.n]=1;S.hist.push(m.n);S.pos=m.i;S.nextAt=Date.now()+S.interval;
+    var k=$("keg");k.textContent=m.n;k.classList.remove("pop");void k.offsetWidth;k.classList.add("pop");beep(520,.2);refresh();
+  }
+  else if(m.t==="marked"&&S){S.marks[m.c][m.n]=1;S.score=m.score;beep(760,.12);refresh()}
+  else if(m.t==="bad"&&S){
+    S.score=m.score;beep(200,.25,"square");info();
+    var el=document.querySelector('[data-k="'+m.c+":"+m.n+'"]');
+    if(el){el.classList.remove("bad");void el.offsetWidth;el.classList.add("bad")}
+  }
+  else if(m.t==="prog"&&S){S.counts=m.c;avatars()}
+  else if(m.t==="end"&&S){
+    S.over=true;S.scores=m.scores;refresh();
+    var win=m.w===S.you,t=m.w<0?"Heç kim qalib olmadı":(win?"Təbriklər, qalib oldunuz!":m.name+" qalib gəldi");
+    $("msg").textContent=t;beep(win?880:240,.5,"triangle");
+    var rows=m.players.map(function(n,i){return{n:n,s:m.scores[i]}}).sort(function(a,b){return b.s-a.s});
+    var h="<ol>"+rows.map(function(r){return"<li>"+esc(r.n)+" — <b>"+r.s+"</b></li>"}).join("")+"</ol>";
+    dlg(t,h+"<button id='again'>Yenidən oyna</button>");
+    $("again").onclick=function(){$("dlg").close();again()};
+  }
+  else if(m.t==="err"){showForm(m.m||"Xəta")}
+}
+function info(){
+  if(!S)return;
+  var s="Xal: "+S.score+"  ·  Bochka: "+S.pos+"/90";
+  if(!S.over&&S.nextAt>Date.now())s+="  ·  Növbəti: "+Math.ceil((S.nextAt-Date.now())/1000)+" san";
+  $("info").textContent=s;
+}
+function avatars(){
+  var av=$("av");av.innerHTML="";
+  S.players.forEach(function(n,i){
+    var d=document.createElement("div"),b=document.createElement("b"),em=document.createElement("em"),sp=document.createElement("span");
+    b.className=i===S.you?"me":"";b.style.background=COLS[i%COLS.length];b.textContent=n.charAt(0).toUpperCase();
+    em.textContent=best(i);b.appendChild(em);sp.textContent=i===S.you?"Siz":n;d.appendChild(b);d.appendChild(sp);av.appendChild(d);
+  });
+}
+function refresh(){
+  var box=$("cards");box.innerHTML="";
+  S.cards.forEach(function(card,ci){
+    var w=document.createElement("div");w.className="card";var g=document.createElement("div");g.className="grid";
+    card.forEach(function(row){for(var c=0;c<9;c++){
+      var v=row[c],d=document.createElement("div");
+      if(!v)d.className="c";
+      else{d.className="c n"+(S.marks[ci][v]?" m":"");d.textContent=v;d.setAttribute("data-k",ci+":"+v);
+        d.onclick=(function(v,ci){return function(){tap(v,ci)}})(v,ci)}
+      g.appendChild(d)}});
+    var t=document.createElement("span");t.className="tag";t.textContent=String(ci+1);
+    w.appendChild(g);w.appendChild(t);box.appendChild(w);
+  });
+  avatars();
+  var h=S.hist.slice(Math.max(0,S.hist.length-5),S.hist.length-1).reverse();
+  $("last").innerHTML=h.map(function(n){return"<i>"+n+"</i>"}).join("");info();
+}
+function tap(v,ci){
+  if(S.over||S.marks[ci][v]||!WS||WS.readyState!==1)return;
+  WS.send(JSON.stringify({t:"mark",c:ci,n:v}));
+}
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function dlg(t,h){$("dt").textContent=t;$("db").innerHTML=h;var d=$("dlg");if(!d.open)d.showModal()}
+function again(){closing=true;if(WS)WS.close();S=null;pid="";try{sessionStorage.removeItem("loto_pid")}catch(e){}$("cards").innerHTML="";$("av").innerHTML="";$("last").innerHTML="";$("info").textContent="";$("msg").textContent="";showForm("")}
+$("go").onclick=function(){
+  var nm=$("nm").value.trim();
+  try{if(nm)localStorage.setItem("loto_name",nm)}catch(e){}
+  joinOpts={name:nm||CFG.player,room:$("rm").value.trim()};
+  $("err").textContent="Qoşulur...";connect();
+};
+$("home").onclick=function(){if(!S||S.over||confirm("Oyundan çıxmaq istəyirsiniz?"))again()};
+$("snd").onclick=function(){mute=!mute;this.textContent=mute?"🔇":"🔊"};
+$("dc").onclick=function(){$("dlg").close()};
+$("lb").onclick=function(){
+  dlg("Reytinq","<p>Yüklənir...</p>");
+  fetch(httpBase()+"/leaderboard").then(function(r){return r.json()}).then(function(rows){
+    $("db").innerHTML=rows.length?"<ol>"+rows.slice(0,10).map(function(r){return"<li>"+esc(r.name)+" — <b>"+r.score+"</b> ("+r.wins+" qələbə)</li>"}).join("")+"</ol>":"<p>Hələ nəticə yoxdur.</p>";
+  }).catch(function(){$("db").innerHTML="<p>Reytinq əlçatan deyil.</p>"});
+};
+setInterval(info,300);
+try{$("nm").value=CFG.player||localStorage.getItem("loto_name")||""}catch(e){$("nm").value=CFG.player}
+if(CFG.room)$("rm").value=CFG.room;
+</script>
+</body>
+</html>

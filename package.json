@@ -4,5 +4,6 @@
   "private": true,
   "description": "REDPLAYCO game portal and API LX callback service",
   "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=20" },
+  "dependencies": { "ws": "^8.18.0" }
 }
