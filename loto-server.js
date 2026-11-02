@@ -8,7 +8,7 @@ const ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()
 const VERIFY_URL = process.env.VERIFY_URL || "";      // saytınızın token yoxlama ünvanı (ixtiyari)
 const RESULT_URL = process.env.RESULT_URL || "";      // nəticələrin göndəriləcəyi ünvan (ixtiyari)
 const API_KEY = process.env.SERVER_API_KEY || "";     // GİZLİ açar: yalnız burada, serverdə qalır
-const INTERVAL = 3500, LOBBY_MS = 20000, MAX_PLAYERS = 6, MIN_TOTAL = 3;
+const INTERVAL = 3500, LOBBY_MS = 20000, MAX_PLAYERS = 1000, MIN_TOTAL = 3;
 const BOT_NAMES = ["Elçin", "Leyla", "Tural", "Nigar", "Rauf", "Aysel", "Kamran", "Səbinə"];
 const LB_FILE = path.join(__dirname, "data", "leaderboard.json");
 
@@ -53,13 +53,13 @@ const rooms = new Map(), byPid = new Map();
 function getRoom(code) {
   if (code) {
     for (const r of rooms.values()) if (r.code === code) return r.state === "wait" && r.players.length < MAX_PLAYERS ? r : null;
-    return newRoom(code);
+    return newRoom(code, false);
   }
-  for (const r of rooms.values()) if (!r.code && r.state === "wait" && r.players.length < MAX_PLAYERS) return r;
-  return newRoom("");
+  for (const r of rooms.values()) if (r.global && (r.state === "wait" || r.state === "play") && r.players.length < MAX_PLAYERS) return r;
+  return newRoom("", true);
 }
-function newRoom(code) {
-  const r = { id: crypto.randomUUID(), code, state: "wait", players: [], timers: [], order: [], pos: 0, drawn: new Set(), startAt: Date.now() + LOBBY_MS };
+function newRoom(code, global) {
+  const r = { id: crypto.randomUUID(), code, global: !!global, state: "wait", players: [], timers: [], order: [], pos: 0, drawn: new Set(), startAt: Date.now() + LOBBY_MS };
   rooms.set(r.id, r);
   r.lobbyTick = setInterval(() => lobbyInfo(r), 1000);
   r.startTimer = setTimeout(() => startGame(r), LOBBY_MS);
@@ -80,7 +80,7 @@ function startGame(r) {
   if (r.state !== "wait") return;
   clearInterval(r.lobbyTick); clearTimeout(r.startTimer);
   const humans = r.players.filter(p => !p.bot).length;
-  if (!(r.code && humans >= 2)) {
+  if (!((r.global && humans >= 2) || (r.code && humans >= 2))) {
     const names = shuffle(BOT_NAMES.filter(n => !r.players.some(p => p.name === n)));
     while (r.players.length < MIN_TOTAL) r.players.push({ pid: crypto.randomUUID(), ws: null, name: names.pop(), bot: true, cards: [], marks: [], score: 0 });
   }
@@ -176,18 +176,24 @@ wss.on("connection", ws => {
         const old = m.pid && byPid.get(m.pid);                       // yenidən qoşulma
         if (old && old.r.state === "play") {
           old.p.ws = ws; ws.player = old.p;
-          const r = old.r, i = r.players.indexOf(old.p);
+           const r = old.r, i = r.players.indexOf(old.p);
           send(ws, { t: "joined", pid: old.p.pid, code: r.code });
           send(ws, { t: "start", you: i, players: r.players.map(p => p.name), cards: old.p.cards, interval: INTERVAL });
           send(ws, { t: "sync", drawn: r.order.slice(0, r.pos), marks: old.p.marks.map(s => [...s]), score: old.p.score });
           return progress(r);
         }
         const id = await identify(m.token, m.name);
-        const code = String(m.room || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-        const r = getRoom(code);
-        if (!r) return send(ws, { t: "err", m: "Otaq doludur və ya oyun artıq başlayıb" });
-        if (ws.player) return;
-        ws.player = addPlayer(r, ws, id.name, id.uid);
+         const code = "";
+         const r = getRoom(code);
+         if (!r) return send(ws, { t: "err", m: "Otaq doludur və ya oyun artıq başlayıb" });
+         if (ws.player) return;
+         ws.player = addPlayer(r, ws, id.name, id.uid);
+         if (r.state === "play") {
+           const p = ws.player, i = r.players.indexOf(p);
+           p.cards = [mkCard(), mkCard(), mkCard()]; p.marks = [new Set(), new Set(), new Set()];
+           send(ws, { t: "start", you: i, players: r.players.map(x => x.name), cards: p.cards, interval: INTERVAL });
+           send(ws, { t: "sync", drawn: r.order.slice(0, r.pos), marks: p.marks.map(s => [...s]), score: p.score });
+         }
       } else if (m.t === "mark" && ws.player) {
         const info = byPid.get(ws.player.pid);
         if (info) mark(info.r, ws.player, m.c, m.n);
