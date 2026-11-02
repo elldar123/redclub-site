@@ -40,24 +40,6 @@ document.querySelector('#searchToggle').addEventListener('click', () => {
   document.querySelector('#games').scrollIntoView({ behavior: 'smooth' });
 });
 
-let balance = 25;
-let selectedAmount = 25;
-document.querySelectorAll('.amounts button').forEach(button => button.addEventListener('click', () => {
-  document.querySelectorAll('.amounts button').forEach(item => item.classList.remove('selected'));
-  button.classList.add('selected');
-  selectedAmount = Number(button.dataset.amount);
-  document.querySelector('#depositAmount').textContent = selectedAmount;
-}));
-document.querySelector('#depositBtn').addEventListener('click', () => {
-  balance += selectedAmount;
-  document.querySelector('#balance').textContent = balance.toFixed(2);
-  document.querySelector('#cardBalance').textContent = balance.toFixed(2);
-  toast.textContent = `₼${selectedAmount} balansına əlavə edildi!`;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
-});
-document.querySelector('#balanceBtn').addEventListener('click', () => document.querySelector('#deposit').scrollIntoView({behavior:'smooth'}));
-
 const slides = document.querySelectorAll('.hero-slide');
 const dots = document.querySelectorAll('.carousel-dot');
 let currentSlide = 0;
