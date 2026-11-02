@@ -90,13 +90,13 @@ async function listGames(res, provider) {
 async function getGgxToken() {
   if (!ggx.baseUrl || !ggx.clientId || !ggx.clientSecret) throw new Error('GoldenGateX is not configured');
   if (ggxToken && ggxToken.expiresAt > Date.now() + 30000) return ggxToken.value;
-  const response = await fetch(new URL('/auth/createtoken', ggx.baseUrl), { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ clientId: ggx.clientId, clientSecret: ggx.clientSecret }) });
+  const response = await fetch(new URL('auth/createtoken', ggx.baseUrl), { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ clientId: ggx.clientId, clientSecret: ggx.clientSecret }) });
   const raw = await response.text(); let data = {}; try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
   if (!response.ok || !data.token) throw new Error(`GoldenGateX token HTTP ${response.status}: ${data.message || raw.slice(0,120) || 'empty response'}`);
   ggxToken = { value: data.token, expiresAt: Number(data.expiration || 0) * 1000 };
   return ggxToken.value;
 }
-async function ggxRequest(res, route, options = {}) { try { const token = await getGgxToken(); const response = await fetch(new URL(route, ggx.baseUrl), { ...options, headers: { accept:'application/json', authorization:`Bearer ${token}`, ...(options.headers || {}) } }); const data = await response.json().catch(() => ({})); sendJson(res, response.status, data); } catch (error) { sendJson(res, 503, { success:false, error:error.message, setupRequired:true }); } }
+async function ggxRequest(res, route, options = {}) { try { const token = await getGgxToken(); const response = await fetch(new URL(route.replace(/^\/+/,''), ggx.baseUrl), { ...options, headers: { accept:'application/json', authorization:`Bearer ${token}`, ...(options.headers || {}) } }); const data = await response.json().catch(() => ({})); sendJson(res, response.status, data); } catch (error) { sendJson(res, 503, { success:false, error:error.message, setupRequired:true }); } }
 async function handleGgxGames(req, res) { const body = await readJson(req); return ggxRequest(res, '/games/list', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ vendorCode: body.vendorCode, language: body.language || 'az' }) }); }
 async function handleGgxLaunch(req, res) { const body = await readJson(req); return ggxRequest(res, '/game/launch-url', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ vendorCode:body.vendorCode, gameCode:body.gameCode, userCode:body.userCode, language:body.language || 'az', lobbyUrl:body.lobbyUrl || 'https://redplayco.com', theme:body.theme }) }); }
 function validGgxAuth(req) { const expected = `Basic ${Buffer.from(`${ggx.clientId}:${ggx.clientSecret}`).toString('base64')}`; const actual = req.headers.authorization || ''; return expected.length === actual.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(actual)); }
