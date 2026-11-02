@@ -12,6 +12,12 @@ const providers = [
   { id: 'amatic', name: 'Amatic', docs: 'https://documenter.getpostman.com/view/25695248/2sA358dkaT' },
   { id: 'amusnet', name: 'Amusnet', docs: 'https://documenter.getpostman.com/view/25695248/2sBXVbHZch' },
 ];
+const providerConfig = {
+  pragmatic: { baseUrl: process.env.PRAGMATIC_BASE_URL, token: process.env.PRAGMATIC_API_TOKEN, secret: process.env.PRAGMATIC_SECRET_KEY, agentId: process.env.PRAGMATIC_AGENT_ID },
+  amatic: { baseUrl: process.env.AMATIC_BASE_URL, token: process.env.AMATIC_API_TOKEN, secret: process.env.AMATIC_SECRET_KEY, agentId: process.env.AMATIC_AGENT_ID },
+  pgsoft: { baseUrl: process.env.PGSOFT_BASE_URL, token: process.env.PGSOFT_API_TOKEN, secret: process.env.PGSOFT_SECRET_KEY, agentId: process.env.PGSOFT_AGENT_ID },
+  amusnet: { baseUrl: process.env.AMUSNET_BASE_URL, token: process.env.AMUSNET_API_TOKEN, secret: process.env.AMUSNET_SECRET_KEY, agentId: process.env.AMUSNET_AGENT_ID },
+};
 
 const server = http.createServer(async (req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -36,12 +42,14 @@ const server = http.createServer(async (req, res) => {
 async function launchGame(req, res) {
   const body = await readJson(req);
   if (!body.gameId || !body.userId) return sendJson(res, 400, { error: 'gameId and userId are required' });
-  if (!process.env.APILX_TOKEN) return sendJson(res, 503, { error: 'API LX is not configured yet', setupRequired: true });
+  const provider = body.provider || process.env.APILX_PROVIDER || 'pragmatic';
+  const config = providerConfig[provider];
+  if (!config?.token || !config?.baseUrl) return sendJson(res, 503, { error: `API LX provider ${provider} is not configured yet`, setupRequired: true });
 
   // Confirm the exact launch path and payload in API LX documentation before enabling production.
-  const upstream = await fetch(new URL(process.env.APILX_LAUNCH_PATH || '/v1/games/launch', process.env.APILX_BASE_URL), {
-    method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.APILX_TOKEN}` },
-    body: JSON.stringify({ provider: body.provider || process.env.APILX_PROVIDER, gameId: body.gameId, userId: body.userId, currency: process.env.APILX_CURRENCY, callbackUrl: process.env.APILX_CALLBACK_URL, mode: body.mode || 'real' }),
+  const upstream = await fetch(new URL(process.env.APILX_LAUNCH_PATH || '/v1/games/launch', config.baseUrl), {
+    method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${config.token}`, 'x-api-token': config.token },
+    body: JSON.stringify({ provider, agentId: config.agentId, gameId: body.gameId, userId: body.userId, currency: process.env.APILX_CURRENCY, callbackUrl: process.env.APILX_CALLBACK_URL, mode: body.mode || 'real' }),
   });
   const data = await upstream.json().catch(() => ({}));
   sendJson(res, upstream.status, data);
