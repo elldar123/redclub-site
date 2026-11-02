@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RED · Ödəniş</title>
+  <meta name="description" content="RED təhlükəsiz ödəniş portalı">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--red:#e50914;--red2:#ff2430;--ink:#0b0b0d;--panel:#151518;--panel2:#1c1c21;--line:#2c2c33;--muted:#96969f;--white:#f7f7f8}
+    *{box-sizing:border-box;margin:0} body{min-height:100vh;background:radial-gradient(circle at 50% -15%,#401015 0,#130b0d 31%,var(--ink) 68%);color:var(--white);font-family:Inter,Arial,sans-serif}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.25;background-image:linear-gradient(#fff0 49%,#fff1 50%),linear-gradient(90deg,#fff0 49%,#fff1 50%);background-size:64px 64px;mask-image:linear-gradient(#000,transparent 85%)}
+    a{color:inherit;text-decoration:none}.shell{position:relative;z-index:1;max-width:1120px;margin:auto;padding:24px 24px 56px}
+    header{height:64px;display:flex;align-items:center;justify-content:space-between}.brand{font:800 38px/1 'Space Grotesk';letter-spacing:7px;color:var(--red);text-shadow:0 0 28px #e509144d}.brand span{color:#fff}.nav{display:flex;gap:10px}.nav a,.ghost{border:1px solid var(--line);border-radius:10px;padding:11px 16px;color:#d7d7dc;font-size:13px;transition:.2s}.nav a:hover,.ghost:hover{border-color:#e50914;color:#fff}
+    .layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.75fr);gap:24px;align-items:start;margin-top:58px}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:3px;color:#ff5961;font-weight:700;margin-bottom:15px}.hero h1{font:600 clamp(40px,6vw,72px)/.98 'Space Grotesk';letter-spacing:-3px;max-width:650px}.hero h1 em{font-style:normal;color:var(--red)}.hero-copy{color:var(--muted);max-width:510px;line-height:1.7;margin:22px 0 30px;font-size:15px}.trust{display:flex;flex-wrap:wrap;gap:9px}.trust span{border:1px solid var(--line);background:#ffffff05;border-radius:99px;padding:9px 12px;color:#bebec5;font-size:12px}.trust b{color:#35d28a;margin-right:5px}
+    .card{background:linear-gradient(145deg,#1b1b20,#111114);border:1px solid #34343b;border-radius:18px;box-shadow:0 24px 70px #0008}.payment{padding:25px}.card-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.card-title h2{font:600 21px 'Space Grotesk'}.secure{font-size:11px;color:#5ee7a2}.label{display:block;color:#a7a7af;font-size:12px;font-weight:600;margin:0 0 9px;text-transform:uppercase;letter-spacing:1px}.methods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px}.method{cursor:pointer;text-align:left;background:#111115;color:#ddd;border:1px solid var(--line);border-radius:10px;padding:13px 12px;font:600 13px Inter}.method small{display:block;color:#777780;font-size:10px;font-weight:400;margin-top:4px}.method.active{border-color:var(--red);background:#310f13;box-shadow:inset 0 0 0 1px #e5091444}.method.active small{color:#e9898f}.amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.amount{background:#111115;color:#e8e8eb;border:1px solid var(--line);border-radius:9px;padding:12px 8px;cursor:pointer;font-weight:600}.amount:hover,.amount.active{border-color:var(--red);color:#fff;background:#310f13}.custom{display:flex;align-items:center;margin-top:10px;border:1px solid var(--line);border-radius:9px;background:#111115;padding:0 12px;color:#aaa}.custom input{width:100%;border:0;outline:0;background:transparent;color:#fff;padding:13px 0;font:600 15px Inter}.summary{border-top:1px solid var(--line);margin-top:22px;padding-top:18px}.row{display:flex;justify-content:space-between;color:#92929b;font-size:13px;margin:10px 0}.row strong{color:#eee}.total{font-size:16px;color:#fff;margin-top:15px}.total strong{font-size:22px;color:#fff}.pay{width:100%;border:0;border-radius:10px;padding:15px;background:linear-gradient(110deg,var(--red),var(--red2));color:#fff;font:700 14px Inter;cursor:pointer;box-shadow:0 10px 25px #e5091438;margin-top:15px}.pay:hover{filter:brightness(1.12);transform:translateY(-1px)}.note{text-align:center;color:#73737b;font-size:11px;margin-top:14px;line-height:1.5}
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:72px}.feature{padding:18px;border:1px solid var(--line);border-radius:12px;background:#ffffff04}.feature i{font-style:normal;color:var(--red);font-size:20px}.feature h3{font-size:13px;margin:12px 0 6px}.feature p{font-size:12px;color:#85858e;line-height:1.5}.footer{display:flex;justify-content:space-between;gap:16px;border-top:1px solid var(--line);margin-top:50px;padding-top:22px;color:#707078;font-size:12px}.footer strong{color:#aaa}.toast{position:fixed;left:50%;bottom:25px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#28282e;border:1px solid #46464f;border-radius:10px;padding:14px 18px;color:#fff;font-size:13px;transition:.25s;z-index:5}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:780px){.shell{padding:16px 16px 38px}header{height:56px}.brand{font-size:30px}.nav a{padding:9px 10px;font-size:11px}.layout{grid-template-columns:1fr;margin-top:42px}.hero h1{letter-spacing:-2px}.hero-copy{margin:17px 0 22px}.payment{padding:19px}.features{grid-template-columns:1fr;margin-top:38px}.footer{flex-direction:column;margin-top:35px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <a class="brand" href="#">RED<span>.</span></a>
+      <nav class="nav"><a href="#payment">Ödəniş</a><a href="#support">Dəstək</a></nav>
+    </header>
+    <section class="layout">
+      <div class="hero">
+        <div class="eyebrow">RED · təhlükəsiz ödəniş</div>
+        <h1>Balansınızı <em>indi</em> artırın.</h1>
+        <p class="hero-copy">Sürətli və rahat ödəniş portalı. Məbləği seçin, uyğun ödəniş üsulunu göstərin və əməliyyatı təhlükəsiz şəkildə tamamlayın.</p>
+        <div class="trust"><span><b>✓</b> SSL qorunma</span><span><b>✓</b> Ani təsdiq</span><span><b>✓</b> Onlayn çek</span></div>
+      </div>
+      <form class="card payment" id="payment" onsubmit="return pay(event)">
+        <div class="card-title"><h2>Ödəniş et</h2><span class="secure">● Sistem aktivdir</span></div>
+        <label class="label">Ödəniş üsulu</label>
+        <div class="methods">
+          <button type="button" class="method active" data-method="Bank kartı"><span>💳 Bank kartı</span><small>Visa / Mastercard</small></button>
+          <button type="button" class="method" data-method="m10"><span>📱 m10</span><small>Telefon nömrəsi ilə</small></button>
+        </div>
+        <label class="label">Məbləğ · AZN</label>
+        <div class="amounts"><button type="button" class="amount" data-value="5">5 AZN</button><button type="button" class="amount active" data-value="10">10 AZN</button><button type="button" class="amount" data-value="20">20 AZN</button><button type="button" class="amount" data-value="30">30 AZN</button><button type="button" class="amount" data-value="50">50 AZN</button><button type="button" class="amount" data-value="100">100 AZN</button></div>
+        <label class="custom"><input id="customAmount" type="number" min="5" max="10000" step="1" placeholder="Başqa məbləğ" aria-label="Başqa məbləğ"><span>AZN</span></label>
+        <div class="summary"><div class="row"><span>Məbləğ</span><strong><span id="amountText">10.00</span> AZN</strong></div><div class="row"><span>Bank komissiyası</span><strong id="fee">— AZN</strong></div><div class="row total"><span>Ödəniləcək cəmi</span><strong><span id="total">10.00</span> AZN</strong></div></div>
+        <button class="pay" type="submit">Ödənişə keç <span>→</span></button>
+        <p class="note">Minimum məbləğ: 5 AZN · Ödəniş məlumatlarınız qorunur</p>
+      </form>
+    </section>
+    <section class="features" id="support"><article class="feature"><i>↯</i><h3>Sürətli təsdiq</h3><p>Ödəniş statusu saniyələr ərzində hesabınızda görünür.</p></article><article class="feature"><i>◈</i><h3>Təhlükəsiz bağlantı</h3><p>Kart məlumatları bu səhifədə saxlanılmır.</p></article><article class="feature"><i>?</i><h3>24/7 dəstək</h3><p>Çətinlik yarandıqda dəstək komandamızla əlaqə saxlayın.</p></article></section>
+    <footer class="footer"><span>© 2026 <strong>RED</strong> · Bütün hüquqlar qorunur</span><span>Şərtlər · Məxfilik · Dəstək</span></footer>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script>
+    let selected=10, method='Bank kartı';
+    const amountText=document.getElementById('amountText'), total=document.getElementById('total'), custom=document.getElementById('customAmount');
+    function render(){amountText.textContent=Number(selected).toFixed(2);total.textContent=Number(selected).toFixed(2)}
+    document.querySelectorAll('.amount').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.amount').forEach(x=>x.classList.remove('active'));btn.classList.add('active');custom.value='';selected=Number(btn.dataset.value);render()}));
+    custom.addEventListener('input',()=>{document.querySelectorAll('.amount').forEach(x=>x.classList.remove('active'));selected=Math.max(0,Number(custom.value)||0);render()});
+    document.querySelectorAll('.method').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.method').forEach(x=>x.classList.remove('active'));btn.classList.add('active');method=btn.dataset.method}));
+    function pay(e){e.preventDefault();const toast=document.getElementById('toast');if(selected<5){toast.textContent='Minimum ödəniş məbləği 5 AZN-dir.'}else{toast.textContent=method+' ilə '+Number(selected).toFixed(2)+' AZN ödəniş üçün provayderə yönləndirilirsiniz.'}toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),3500);return false}
+    render();
+  </script>
+</body>
+</html>
