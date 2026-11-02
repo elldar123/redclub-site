@@ -58,6 +58,28 @@ function showFeaturedGame(game) { const slide = slides[0]; if (!slide || !game) 
 function renderGames() { const grid = document.querySelector('#gameGrid'); grid.innerHTML = allProviderGames.slice(0, gamesShown).map(game => `<article class="game-card" data-category="all" data-name="${escapeHtml(game.name)}"><div class="game-visual api-game-image"><img class="game-art-img" loading="lazy" src="${escapeAttr(game.iconurl3 || game.iconurl1 || '')}" alt=""></div><div class="game-info"><div><h3>${escapeHtml(game.name)}</h3><p>${escapeHtml(game.vendorid || game.provider || 'Casino')}</p></div><button class="play-btn" data-game="${escapeHtml(game.name)}" data-game-id="${game.gameid}" data-provider="${game.provider || 'pragmatic'}">▶</button></div></article>`).join(''); cards = document.querySelectorAll('.game-card'); bindPlayButtons(); loadMore.style.display = gamesShown < allProviderGames.length ? 'block' : 'none'; }
 loadMore.addEventListener('click', () => { gamesShown += 24; renderGames(); });
 setInterval(() => { if (allProviderGames.length) { featuredIndex = (featuredIndex + 1) % allProviderGames.length; showFeaturedGame(allProviderGames[featuredIndex]); } }, 5000);
+const betSlip = document.querySelector('#betSlip');
+const slipItems = document.querySelector('#slipItems');
+const slipCount = document.querySelector('#slipCount');
+const slipTotal = document.querySelector('#slipTotal');
+let picks = [];
+document.querySelectorAll('.odds button').forEach(button => button.addEventListener('click', () => {
+  const pick = { match: button.dataset.match, choice: button.dataset.pick, odd: Number(button.dataset.odd) };
+  if (!Number.isFinite(pick.odd)) return;
+  picks = picks.filter(item => item.match !== pick.match);
+  picks.push(pick);
+  renderSlip();
+  betSlip.classList.add('open');
+}));
+function renderSlip() { slipCount.textContent = picks.length; slipItems.innerHTML = picks.length ? picks.map(item => `<div class="slip-item">${escapeHtml(item.match)}<b>${escapeHtml(item.choice)} · ${item.odd.toFixed(2)}</b></div>`).join('') : '<p>Kuponunuz boşdur.<br /><small>Odds seçərək kupon yaradın.</small></p>'; slipTotal.textContent = picks.length ? picks.reduce((total, item) => total * item.odd, 1).toFixed(2) : '0.00'; }
+document.querySelector('#slipToggle').addEventListener('click', () => betSlip.classList.toggle('open'));
+document.querySelector('#closeSlip').addEventListener('click', () => betSlip.classList.remove('open'));
+document.querySelector('#slipSubmit').addEventListener('click', () => { toast.textContent = 'Kupon sistemi real backend-dən sonra aktiv olacaq.'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2500); });
+const authModal = document.querySelector('#auth');
+document.querySelector('#profileBtn').addEventListener('click', () => authModal.classList.add('open'));
+document.querySelector('.register-btn').addEventListener('click', event => { event.preventDefault(); authModal.classList.add('open'); });
+document.querySelector('#authClose').addEventListener('click', () => authModal.classList.remove('open'));
+document.querySelector('#authForm').addEventListener('submit', event => { event.preventDefault(); toast.textContent = 'Auth backend-i qoşulduqdan sonra giriş aktiv olacaq.'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2500); });
 function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
 function escapeAttr(value) { return String(value || '').replace(/['"\\]/g, char => `\\${char}`); }
 loadProviderGames();

@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="simple-hero.css" />
   <link rel="stylesheet" href="live-art.css" />
   <link rel="stylesheet" href="sports.css" />
+  <link rel="stylesheet" href="auth-betslip.css" />
   <link rel="stylesheet" href="video-layout.css" />
 </head>
 <body>
@@ -41,8 +42,9 @@
     </nav>
     <div class="header-actions">
       <button class="icon-btn" id="searchToggle" aria-label="Axtarış">⌕</button>
-      <button class="profile-btn"><span class="profile-avatar">✦</span><span>Profil</span></button>
-      <a class="register-btn" href="#games">Qeydiyyat</a>
+      <button class="profile-btn" id="profileBtn"><span class="profile-avatar">✦</span><span>Giriş</span></button>
+      <button class="slip-toggle" id="slipToggle">Kupon <b id="slipCount">0</b></button>
+      <a class="register-btn" href="#auth">Qeydiyyat</a>
       <button class="menu-btn" id="menuToggle" aria-label="Menyunu aç">☰</button>
     </div>
   </header>
@@ -93,9 +95,9 @@
       <div class="sports-head"><div><p class="eyebrow">CANLI VƏ YAXINDA</p><h2>OYUNUN RİTMİNİ TUT</h2></div><a href="#sports">Bütün tədbirlər <span>→</span></a></div>
       <div class="sport-tabs"><button class="sport-tab active">⚡ Canlı</button><button class="sport-tab">⚽ Futbol</button><button class="sport-tab">◉ Tennis</button><button class="sport-tab">♜ Basketbol</button><button class="sport-tab">◈ E-sport</button></div>
       <div class="match-grid">
-        <article class="match-card"><div class="match-meta"><span class="live-dot">● CANLI</span><small>Futbol · 2-ci hissə 67:22</small></div><div class="teams"><b>Real Madrid</b><strong>2 : 1</strong><b>Man City</b></div><div class="odds"><button>1 <b>1.72</b></button><button>X <b>3.40</b></button><button>2 <b>2.15</b></button></div></article>
-        <article class="match-card"><div class="match-meta"><span class="upcoming">● 18:30</span><small>Basketbol · Bu gün</small></div><div class="teams"><b>Lakers</b><strong>— : —</strong><b>Warriors</b></div><div class="odds"><button>1 <b>1.55</b></button><button>X <b>8.20</b></button><button>2 <b>2.48</b></button></div></article>
-        <article class="match-card"><div class="match-meta"><span class="upcoming">● 21:00</span><small>E-sport · CS2</small></div><div class="teams"><b>NAVI</b><strong>— : —</strong><b>Spirit</b></div><div class="odds"><button>1 <b>1.86</b></button><button>X <b>—</b></button><button>2 <b>1.94</b></button></div></article>
+        <article class="match-card"><div class="match-meta"><span class="live-dot">● CANLI</span><small>Futbol · 2-ci hissə 67:22</small></div><div class="teams"><b>Real Madrid</b><strong>2 : 1</strong><b>Man City</b></div><div class="odds"><button data-match="Real Madrid - Man City" data-pick="1" data-odd="1.72">1 <b>1.72</b></button><button data-match="Real Madrid - Man City" data-pick="X" data-odd="3.40">X <b>3.40</b></button><button data-match="Real Madrid - Man City" data-pick="2" data-odd="2.15">2 <b>2.15</b></button></div></article>
+        <article class="match-card"><div class="match-meta"><span class="upcoming">● 18:30</span><small>Basketbol · Bu gün</small></div><div class="teams"><b>Lakers</b><strong>— : —</strong><b>Warriors</b></div><div class="odds"><button data-match="Lakers - Warriors" data-pick="1" data-odd="1.55">1 <b>1.55</b></button><button data-match="Lakers - Warriors" data-pick="X" data-odd="8.20">X <b>8.20</b></button><button data-match="Lakers - Warriors" data-pick="2" data-odd="2.48">2 <b>2.48</b></button></div></article>
+        <article class="match-card"><div class="match-meta"><span class="upcoming">● 21:00</span><small>E-sport · CS2</small></div><div class="teams"><b>NAVI</b><strong>— : —</strong><b>Spirit</b></div><div class="odds"><button data-match="NAVI - Spirit" data-pick="1" data-odd="1.86">1 <b>1.86</b></button><button data-match="NAVI - Spirit" data-pick="X" data-odd="-">X <b>—</b></button><button data-match="NAVI - Spirit" data-pick="2" data-odd="1.94">2 <b>1.94</b></button></div></article>
       </div>
     </section>
 <section class="games-section" id="games">
@@ -111,6 +113,9 @@
       <button class="load-more" id="loadMoreGames">Daha çox oyun göstər <span>↓</span></button>
     </section>
   </main>
+
+  <aside class="betslip" id="betSlip"><div class="betslip-head"><strong>Kuponum</strong><button id="closeSlip">×</button></div><div class="slip-items" id="slipItems"><p>Kuponunuz boşdur.<br /><small>Odds seçərək kupon yaradın.</small></p></div><div class="slip-total"><span>Ümumi əmsal</span><b id="slipTotal">0.00</b></div><button class="slip-submit" id="slipSubmit">Kuponu təsdiqlə</button><small class="slip-note">Demo görünüş · Real bahis sistemi sonra qoşulacaq</small></aside>
+  <div class="auth-modal" id="auth"><div class="auth-panel"><button class="auth-close" id="authClose">×</button><p class="eyebrow">REDX ÜZVLÜYÜ</p><h2 id="authTitle">Hesabına daxil ol</h2><form id="authForm"><input type="text" placeholder="Email və ya telefon" required /><input type="password" placeholder="Şifrə" required /><button type="submit" class="auth-submit">Daxil ol →</button></form><button class="auth-switch" id="authSwitch">Hesabın yoxdur? Qeydiyyatdan keç</button><small>Demo UI · Təhlükəsiz auth backend-i ayrıca aktivləşdiriləcək</small></div></div>
 
   <footer id="about"><div class="logo"><span>R</span>EDX<span class="logo-dot">.</span></div><p>Oyun sənin meydançandır.</p><small>© 2025 REDX PLAY. Bütün hüquqlar qorunur.</small></footer>
   <div class="toast" id="toast"></div>
