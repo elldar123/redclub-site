@@ -2,6 +2,8 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { WebSocketServer } = require('ws');
+const { attachLoto } = require('./loto-server');
 
 const root = __dirname;
 loadEnv();
@@ -47,6 +49,8 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 500, { error: 'Internal server error' });
   }
 });
+const lotoWss = new WebSocketServer({ server });
+attachLoto(lotoWss);
 
 async function launchGame(req, res) {
   const body = await readJson(req);
