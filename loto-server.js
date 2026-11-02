@@ -8,7 +8,7 @@ const ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()
 const VERIFY_URL = process.env.VERIFY_URL || "";      // saytınızın token yoxlama ünvanı (ixtiyari)
 const RESULT_URL = process.env.RESULT_URL || "";      // nəticələrin göndəriləcəyi ünvan (ixtiyari)
 const API_KEY = process.env.SERVER_API_KEY || "";     // GİZLİ açar: yalnız burada, serverdə qalır
-const INTERVAL = 3500, LOBBY_MS = 20000, MAX_PLAYERS = 1000, MIN_TOTAL = 3;
+const INTERVAL = 3500, LOBBY_MS = 120000, MAX_PLAYERS = 1000, MIN_TOTAL = 3;
 const BOT_NAMES = ["Elçin", "Leyla", "Tural", "Nigar", "Rauf", "Aysel", "Kamran", "Səbinə"];
 const LB_FILE = path.join(__dirname, "data", "leaderboard.json");
 
