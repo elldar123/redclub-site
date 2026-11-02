@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="clean-layout.css" />
   <link rel="stylesheet" href="simple-hero.css" />
   <link rel="stylesheet" href="live-art.css" />
+  <link rel="stylesheet" href="sports.css" />
   <link rel="stylesheet" href="video-layout.css" />
 </head>
 <body>
@@ -33,12 +34,15 @@
     <nav class="main-nav" aria-label="Əsas menyu">
       <a class="active" href="#top">Ana səhifə</a>
       <a href="#games">Oyunlar</a>
+      <a href="#sports">İdman</a>
+      <a href="#casino">Casino</a>
       <a href="#categories">Kategoriyalar</a>
       <a href="#about">Haqqımızda</a>
     </nav>
     <div class="header-actions">
       <button class="icon-btn" id="searchToggle" aria-label="Axtarış">⌕</button>
       <button class="profile-btn"><span class="profile-avatar">✦</span><span>Profil</span></button>
+      <a class="register-btn" href="#games">Qeydiyyat</a>
       <button class="menu-btn" id="menuToggle" aria-label="Menyunu aç">☰</button>
     </div>
   </header>
@@ -83,6 +87,16 @@
       <div><strong>4.9<span>★</span></strong><small>Oyunçu reytinqi</small></div>
       <div><strong>24<span>/7</span></strong><small>Əyləncə</small></div>
       <div class="stats-note">Heç bir yükləmə yoxdur.<br /><b>Sadəcə seç və oyna.</b></div>
+    </section>
+
+    <section class="sports-section" id="sports">
+      <div class="sports-head"><div><p class="eyebrow">CANLI VƏ YAXINDA</p><h2>OYUNUN RİTMİNİ TUT</h2></div><a href="#sports">Bütün tədbirlər <span>→</span></a></div>
+      <div class="sport-tabs"><button class="sport-tab active">⚡ Canlı</button><button class="sport-tab">⚽ Futbol</button><button class="sport-tab">◉ Tennis</button><button class="sport-tab">♜ Basketbol</button><button class="sport-tab">◈ E-sport</button></div>
+      <div class="match-grid">
+        <article class="match-card"><div class="match-meta"><span class="live-dot">● CANLI</span><small>Futbol · 2-ci hissə 67:22</small></div><div class="teams"><b>Real Madrid</b><strong>2 : 1</strong><b>Man City</b></div><div class="odds"><button>1 <b>1.72</b></button><button>X <b>3.40</b></button><button>2 <b>2.15</b></button></div></article>
+        <article class="match-card"><div class="match-meta"><span class="upcoming">● 18:30</span><small>Basketbol · Bu gün</small></div><div class="teams"><b>Lakers</b><strong>— : —</strong><b>Warriors</b></div><div class="odds"><button>1 <b>1.55</b></button><button>X <b>8.20</b></button><button>2 <b>2.48</b></button></div></article>
+        <article class="match-card"><div class="match-meta"><span class="upcoming">● 21:00</span><small>E-sport · CS2</small></div><div class="teams"><b>NAVI</b><strong>— : —</strong><b>Spirit</b></div><div class="odds"><button>1 <b>1.86</b></button><button>X <b>—</b></button><button>2 <b>1.94</b></button></div></article>
+      </div>
     </section>
 <section class="games-section" id="games">
       <div class="section-heading"><div><p class="eyebrow">OYUN KOLLEKSİYASI</p><h2>BUGÜN NƏ OYNAYIRSAN?</h2></div><a href="#games" class="all-games">Hamısını gör <span>→</span></a></div>
