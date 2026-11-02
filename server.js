@@ -30,6 +30,8 @@ const server = http.createServer(async (req, res) => {
       const activeProvider = process.env.APILX_PROVIDER || 'pragmatic';
       return sendJson(res, 200, { ok: true, configured: Boolean(providerConfig[activeProvider]?.token), provider: activeProvider, currency: process.env.APILX_CURRENCY || null });
     }
+    if (req.method === 'GET' && parsed.pathname === '/api/admin/status') return sendJson(res, 200, { configured: Boolean(process.env.DATABASE_URL), productionReady: Boolean(process.env.DATABASE_URL && process.env.ADMIN_JWT_SECRET) });
+    if (req.method === 'POST' && parsed.pathname === '/api/admin/login') return sendJson(res, 503, { error: 'Admin database is not configured yet' });
     if (req.method === 'GET' && parsed.pathname === '/api/callback/apilx') {
       return sendJson(res, 200, { ok: true, endpoint: '/api/callback/apilx', method: 'POST', message: 'API LX callback endpoint is ready. Provider callbacks must use POST.' });
     }

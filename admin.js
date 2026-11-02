@@ -1,0 +1,4 @@
+const loginView=document.querySelector('#loginView'),appView=document.querySelector('#appView'),message=document.querySelector('#loginMessage');
+fetch('/api/admin/status').then(r=>r.json()).then(s=>{if(!s.configured)message.textContent='Admin database hələ qoşulmayıb.'}).catch(()=>{});
+document.querySelector('#loginForm').addEventListener('submit',async e=>{e.preventDefault();message.textContent='';try{const r=await fetch('/api/admin/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email.value,password:password.value})});const d=await r.json();if(!r.ok)throw Error(d.error||'Giriş mümkün olmadı');loginView.hidden=true;appView.hidden=false}catch(err){message.textContent=err.message}});
+document.querySelector('#logout').addEventListener('click',()=>{appView.hidden=true;loginView.hidden=false});
