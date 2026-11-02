@@ -92,7 +92,7 @@ async function getGgxToken() {
   if (ggxToken && ggxToken.expiresAt > Date.now() + 30000) return ggxToken.value;
   const response = await fetch(new URL('auth/createtoken', ggx.baseUrl), { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ clientId: ggx.clientId, clientSecret: ggx.clientSecret }) });
   const raw = await response.text(); let data = {}; try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
-  const token = data.token || (response.ok && raw.trim() ? raw.trim() : '');
+  const token = (typeof data === 'string' ? data : data.token) || (response.ok && raw.trim() ? raw.trim().replace(/^"|"$/g, '') : '');
   if (!response.ok || !token) throw new Error(`GoldenGateX token HTTP ${response.status}: ${data.message || raw.slice(0,120) || 'empty response'}`);
   ggxToken = { value: token, expiresAt: Number(data.expiration || 0) * 1000 || Date.now() + 300000 };
   return ggxToken.value;
