@@ -91,8 +91,8 @@ async function getGgxToken() {
   if (!ggx.baseUrl || !ggx.clientId || !ggx.clientSecret) throw new Error('GoldenGateX is not configured');
   if (ggxToken && ggxToken.expiresAt > Date.now() + 30000) return ggxToken.value;
   const response = await fetch(new URL('/auth/createtoken', ggx.baseUrl), { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ clientId: ggx.clientId, clientSecret: ggx.clientSecret }) });
-  const data = await response.json();
-  if (!data.token) throw new Error(data.message || 'GoldenGateX token request failed');
+  const raw = await response.text(); let data = {}; try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
+  if (!response.ok || !data.token) throw new Error(`GoldenGateX token HTTP ${response.status}: ${data.message || raw.slice(0,120) || 'empty response'}`);
   ggxToken = { value: data.token, expiresAt: Number(data.expiration || 0) * 1000 };
   return ggxToken.value;
 }
