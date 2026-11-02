@@ -26,4 +26,13 @@
 4. Terminalda `node server.js` işə sal.
 5. `http://localhost:5500/api/health` ünvanında statusu yoxla.
 
+## Render-də canlı deploy
+
+1. `https://render.com` hesabı yarat və GitHub repository-ni qoş.
+2. `New Blueprint` seçib `render.yaml` faylını istifadə et.
+3. `sync: false` olan 12 secret sahəsini Render Environment bölməsinə əlavə et.
+4. Deploy tamamlandıqdan sonra Render-in verdiyi custom domain bölməsində `redplayco.com` əlavə et.
+5. Cloudflare-də GitHub Pages A record-larını Render-in verdiyi CNAME ilə əvəz et.
+6. Deploy-dan sonra `https://redplayco.com/api/health` ünvanında `configured: true` yoxla.
+
 Tokeni HTML/JavaScript faylına yazmaq olmaz. Callback-də signature yoxlanmadan balans artırmaq olmaz. Production-dan əvvəl KYC, yaş yoxlaması, restricted territories, responsible gaming və yerli lisenziya tələbləri ayrıca təsdiqlənməlidir.

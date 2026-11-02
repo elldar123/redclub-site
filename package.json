@@ -1,0 +1,8 @@
+{
+  "name": "redplayco-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "REDPLAYCO game portal and API LX callback service",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" }
+}

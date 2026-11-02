@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: redplayco
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APILX_CALLBACK_URL
+        value: https://redplayco.com/api/callback/apilx
+      - key: APILX_CURRENCY
+        value: AZN
+      - key: APILX_PROVIDER
+        value: pragmatic
+      - key: APILX_LAUNCH_PATH
+        value: /userAuth
+      - key: PRAGMATIC_AGENT_ID
+        sync: false
+      - key: PRAGMATIC_API_TOKEN
+        sync: false
+      - key: PRAGMATIC_SECRET_KEY
+        sync: false
+      - key: PRAGMATIC_BASE_URL
+        value: https://apipp.lxgame.io
+      - key: AMATIC_AGENT_ID
+        sync: false
+      - key: AMATIC_API_TOKEN
+        sync: false
+      - key: AMATIC_SECRET_KEY
+        sync: false
+      - key: AMATIC_BASE_URL
+        value: https://apiam.lxgame.io
+      - key: PGSOFT_AGENT_ID
+        sync: false
+      - key: PGSOFT_API_TOKEN
+        sync: false
+      - key: PGSOFT_SECRET_KEY
+        sync: false
+      - key: PGSOFT_BASE_URL
+        value: https://ggapi.loginxgameapi.com
+      - key: AMUSNET_AGENT_ID
+        sync: false
+      - key: AMUSNET_API_TOKEN
+        sync: false
+      - key: AMUSNET_SECRET_KEY
+        sync: false
+      - key: AMUSNET_BASE_URL
+        value: https://apiang.gitamus.net
