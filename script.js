@@ -6,6 +6,7 @@ const toast = document.querySelector('#toast');
 const loadMore = document.querySelector('#loadMoreGames');
 let allProviderGames = [];
 let gamesShown = 24;
+let featuredIndex = 0;
 
 function filterGames() {
   const active = document.querySelector('.category.active').dataset.category;
@@ -52,9 +53,11 @@ document.querySelector('#nextSlide').addEventListener('click', () => showSlide(c
 document.querySelector('#prevSlide').addEventListener('click', () => showSlide(currentSlide - 1));
 dots.forEach(dot => dot.addEventListener('click', () => showSlide(Number(dot.dataset.slide))));
 async function loadProviderGames() {
-  try { const response = await fetch('/api/games?provider=all'); const result = await response.json(); if (!Array.isArray(result.data) || !result.data.length) return; allProviderGames = result.data; renderGames(); result.data.slice(0, 3).forEach((game, index) => { const slide = slides[index]; if (!slide) return; const image = game.iconurl3 || game.iconurl1; let art = slide.querySelector('.live-art'); if (!art) { art = document.createElement('img'); art.className = 'live-art'; slide.appendChild(art); } art.src = image; art.alt = ''; art.loading = 'eager'; const play = slide.querySelector('.slide-play'); play.dataset.game = game.name; play.dataset.gameId = game.gameid; play.dataset.provider = game.provider || 'pragmatic'; }); } catch { /* keep built-in catalogue */ } }
+  try { const response = await fetch('/api/games?provider=all'); const result = await response.json(); if (!Array.isArray(result.data) || !result.data.length) return; allProviderGames = result.data; renderGames(); showFeaturedGame(allProviderGames[0]); } catch { /* keep built-in catalogue */ } }
+function showFeaturedGame(game) { const slide = slides[0]; if (!slide || !game) return; let art = slide.querySelector('.live-art'); if (!art) { art = document.createElement('img'); art.className = 'live-art'; slide.appendChild(art); } art.src = game.iconurl3 || game.iconurl1 || ''; art.alt = ''; art.loading = 'eager'; const play = slide.querySelector('.slide-play'); play.dataset.game = game.name; play.dataset.gameId = game.gameid; play.dataset.provider = game.provider || 'pragmatic'; }
 function renderGames() { const grid = document.querySelector('#gameGrid'); grid.innerHTML = allProviderGames.slice(0, gamesShown).map(game => `<article class="game-card" data-category="all" data-name="${escapeHtml(game.name)}"><div class="game-visual api-game-image"><img class="game-art-img" loading="lazy" src="${escapeAttr(game.iconurl3 || game.iconurl1 || '')}" alt=""></div><div class="game-info"><div><h3>${escapeHtml(game.name)}</h3><p>${escapeHtml(game.vendorid || game.provider || 'Casino')}</p></div><button class="play-btn" data-game="${escapeHtml(game.name)}" data-game-id="${game.gameid}" data-provider="${game.provider || 'pragmatic'}">▶</button></div></article>`).join(''); cards = document.querySelectorAll('.game-card'); bindPlayButtons(); loadMore.style.display = gamesShown < allProviderGames.length ? 'block' : 'none'; }
 loadMore.addEventListener('click', () => { gamesShown += 24; renderGames(); });
+setInterval(() => { if (allProviderGames.length) { featuredIndex = (featuredIndex + 1) % allProviderGames.length; showFeaturedGame(allProviderGames[featuredIndex]); } }, 5000);
 function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
 function escapeAttr(value) { return String(value || '').replace(/['"\\]/g, char => `\\${char}`); }
 loadProviderGames();
