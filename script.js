@@ -59,3 +59,21 @@ document.querySelector('#depositBtn').addEventListener('click', () => {
   setTimeout(() => toast.classList.remove('show'), 2500);
 });
 document.querySelector('#balanceBtn').addEventListener('click', () => document.querySelector('#deposit').scrollIntoView({behavior:'smooth'}));
+
+const slides = document.querySelectorAll('.hero-slide');
+const dots = document.querySelectorAll('.carousel-dot');
+let currentSlide = 0;
+function showSlide(index) {
+  currentSlide = (index + slides.length) % slides.length;
+  slides.forEach((slide, i) => slide.classList.toggle('active', i === currentSlide));
+  dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
+}
+document.querySelector('#nextSlide').addEventListener('click', () => showSlide(currentSlide + 1));
+document.querySelector('#prevSlide').addEventListener('click', () => showSlide(currentSlide - 1));
+dots.forEach(dot => dot.addEventListener('click', () => showSlide(Number(dot.dataset.slide))));
+setInterval(() => showSlide(currentSlide + 1), 5000);
+document.querySelectorAll('.slide-play').forEach(button => button.addEventListener('click', () => {
+  toast.textContent = `${button.dataset.game} başlayır...`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}));
