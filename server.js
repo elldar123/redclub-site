@@ -57,6 +57,16 @@ async function launchGame(req, res) {
 }
 
 async function listGames(res, provider) {
+  if (provider === 'all') {
+    const results = await Promise.all(Object.keys(providerConfig).map(async id => {
+      const config = providerConfig[id];
+      if (!config?.token || !config?.baseUrl) return [];
+      const upstream = await fetch(new URL(process.env.APILX_GAMES_PATH || '/gamelist', config.baseUrl), { headers: { accept: 'application/json', authorization: `Bearer ${config.token}` } });
+      const data = await upstream.json().catch(() => ({}));
+      return (Array.isArray(data.data) ? data.data : []).map(game => ({ ...game, provider: id }));
+    }));
+    return sendJson(res, 200, { code: 0, message: 'OK', data: results.flat() });
+  }
   const config = providerConfig[provider];
   if (!config?.token || !config?.baseUrl) return sendJson(res, 503, { error: `API LX provider ${provider} is not configured yet`, setupRequired: true });
   const upstream = await fetch(new URL(process.env.APILX_GAMES_PATH || '/gamelist', config.baseUrl), { headers: { accept: 'application/json', authorization: `Bearer ${config.token}` } });
