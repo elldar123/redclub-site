@@ -18,6 +18,8 @@ const providerConfig = {
   pgsoft: { baseUrl: process.env.PGSOFT_BASE_URL, token: process.env.PGSOFT_API_TOKEN, secret: process.env.PGSOFT_SECRET_KEY, agentId: process.env.PGSOFT_AGENT_ID },
   amusnet: { baseUrl: process.env.AMUSNET_BASE_URL, token: process.env.AMUSNET_API_TOKEN, secret: process.env.AMUSNET_SECRET_KEY, agentId: process.env.AMUSNET_AGENT_ID },
 };
+const ggx = { baseUrl: process.env.GGX_BASE_URL, clientId: process.env.GGX_CLIENT_ID, clientSecret: process.env.GGX_CLIENT_SECRET };
+let ggxToken = null;
 
 const server = http.createServer(async (req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -30,6 +32,11 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, endpoint: '/api/callback/apilx', method: 'POST', message: 'API LX callback endpoint is ready. Provider callbacks must use POST.' });
     }
     if (req.method === 'GET' && parsed.pathname === '/api/providers') return sendJson(res, 200, providers);
+    if (req.method === 'GET' && parsed.pathname === '/api/goldengatex/vendors') return ggxRequest(res, '/vendors/list', { method: 'GET' });
+    if (req.method === 'POST' && parsed.pathname === '/api/goldengatex/games') return handleGgxGames(req, res);
+    if (req.method === 'POST' && parsed.pathname === '/api/goldengatex/launch') return handleGgxLaunch(req, res);
+    if (req.method === 'POST' && parsed.pathname === '/api/balance') return handleGgxBalance(req, res);
+    if (req.method === 'POST' && parsed.pathname === '/api/transaction') return handleGgxTransaction(req, res);
     if (req.method === 'GET' && parsed.pathname === '/api/games') return listGames(res, parsed.searchParams.get('provider') || process.env.APILX_PROVIDER || 'pragmatic');
     if (req.method === 'POST' && parsed.pathname === '/api/launch') return launchGame(req, res);
     if (req.method === 'POST' && parsed.pathname.startsWith('/api/callback/apilx')) return handleCallback(req, res, parsed.pathname.split('/').filter(Boolean).pop());
@@ -73,6 +80,22 @@ async function listGames(res, provider) {
   const data = await upstream.json().catch(() => ({}));
   sendJson(res, upstream.status, data);
 }
+
+async function getGgxToken() {
+  if (!ggx.baseUrl || !ggx.clientId || !ggx.clientSecret) throw new Error('GoldenGateX is not configured');
+  if (ggxToken && ggxToken.expiresAt > Date.now() + 30000) return ggxToken.value;
+  const response = await fetch(new URL('/auth/createtoken', ggx.baseUrl), { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ clientId: ggx.clientId, clientSecret: ggx.clientSecret }) });
+  const data = await response.json();
+  if (!data.token) throw new Error(data.message || 'GoldenGateX token request failed');
+  ggxToken = { value: data.token, expiresAt: Number(data.expiration || 0) * 1000 };
+  return ggxToken.value;
+}
+async function ggxRequest(res, route, options = {}) { try { const token = await getGgxToken(); const response = await fetch(new URL(route, ggx.baseUrl), { ...options, headers: { accept:'application/json', authorization:`Bearer ${token}`, ...(options.headers || {}) } }); const data = await response.json().catch(() => ({})); sendJson(res, response.status, data); } catch (error) { sendJson(res, 503, { success:false, error:error.message, setupRequired:true }); } }
+async function handleGgxGames(req, res) { const body = await readJson(req); return ggxRequest(res, '/games/list', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ vendorCode: body.vendorCode, language: body.language || 'az' }) }); }
+async function handleGgxLaunch(req, res) { const body = await readJson(req); return ggxRequest(res, '/game/launch-url', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ vendorCode:body.vendorCode, gameCode:body.gameCode, userCode:body.userCode, language:body.language || 'az', lobbyUrl:body.lobbyUrl || 'https://redplayco.com', theme:body.theme }) }); }
+function validGgxAuth(req) { const expected = `Basic ${Buffer.from(`${ggx.clientId}:${ggx.clientSecret}`).toString('base64')}`; const actual = req.headers.authorization || ''; return expected.length === actual.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(actual)); }
+async function handleGgxBalance(req, res) { if (!validGgxAuth(req)) return sendJson(res, 200, {success:false,message:0,errorCode:401}); const body=await readJson(req); sendJson(res,200,{success:true,message:round(balances.get(body.userCode)||0),errorCode:0}); }
+async function handleGgxTransaction(req, res) { if (!validGgxAuth(req)) return sendJson(res,200,{success:false,message:0,errorCode:401}); const body=await readJson(req); const user=body.userCode; const tx=String(body.transactionCode||body.historyId); if (!user || !tx) return sendJson(res,200,{success:false,message:0,errorCode:400}); if (transactions.has(`ggx:${tx}`)) return sendJson(res,200,{success:false,message:round(balances.get(user)||0),errorCode:6}); const current=Number(balances.get(user)||0); const delta=Number(body.isCanceled) ? 0 : Number(body.amount||0); if (current+delta<0) return sendJson(res,200,{success:false,message:round(current),errorCode:4}); balances.set(user,round(current+delta)); transactions.set(`ggx:${tx}`,{user,delta}); sendJson(res,200,{success:true,message:round(current+delta),errorCode:0}); }
 
 const balances = new Map();
 const transactions = new Map();
