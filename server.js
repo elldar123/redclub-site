@@ -4,6 +4,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const { attachLoto } = require('./loto-server');
+const database = require('./database');
+const jwt = require('jsonwebtoken');
 
 const root = __dirname;
 loadEnv();
@@ -31,7 +33,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, configured: Boolean(providerConfig[activeProvider]?.token), provider: activeProvider, currency: process.env.APILX_CURRENCY || null });
     }
     if (req.method === 'GET' && parsed.pathname === '/api/admin/status') return sendJson(res, 200, { configured: Boolean(process.env.DATABASE_URL), productionReady: Boolean(process.env.DATABASE_URL && process.env.ADMIN_JWT_SECRET) });
-    if (req.method === 'POST' && parsed.pathname === '/api/admin/login') return sendJson(res, 503, { error: 'Admin database is not configured yet' });
+    if (req.method === 'POST' && parsed.pathname === '/api/admin/login') return adminLogin(req, res);
     if (req.method === 'GET' && parsed.pathname === '/api/callback/apilx') {
       return sendJson(res, 200, { ok: true, endpoint: '/api/callback/apilx', method: 'POST', message: 'API LX callback endpoint is ready. Provider callbacks must use POST.' });
     }
@@ -101,8 +103,9 @@ async function ggxRequest(res, route, options = {}) { try { const token = await 
 async function handleGgxGames(req, res) { const body = await readJson(req); return ggxRequest(res, '/games/list', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ vendorCode: body.vendorCode, language: body.language || 'az' }) }); }
 async function handleGgxLaunch(req, res) { const body = await readJson(req); return ggxRequest(res, '/game/launch-url', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ vendorCode:body.vendorCode, gameCode:body.gameCode, userCode:body.userCode, language:body.language || 'az', lobbyUrl:body.lobbyUrl || 'https://redplayco.com', theme:body.theme }) }); }
 function validGgxAuth(req) { const expected = `Basic ${Buffer.from(`${ggx.clientId}:${ggx.clientSecret}`).toString('base64')}`; const actual = req.headers.authorization || ''; return expected.length === actual.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(actual)); }
-async function handleGgxBalance(req, res) { if (!validGgxAuth(req)) return sendJson(res, 200, {success:false,message:0,errorCode:401}); const body=await readJson(req); sendJson(res,200,{success:true,message:round(balances.get(body.userCode)||0),errorCode:0}); }
-async function handleGgxTransaction(req, res) { if (!validGgxAuth(req)) return sendJson(res,200,{success:false,message:0,errorCode:401}); const body=await readJson(req); const user=body.userCode; const tx=String(body.transactionCode||body.historyId); if (!user || !tx) return sendJson(res,200,{success:false,message:0,errorCode:400}); if (transactions.has(`ggx:${tx}`)) return sendJson(res,200,{success:false,message:round(balances.get(user)||0),errorCode:6}); const current=Number(balances.get(user)||0); const delta=Number(body.isCanceled) ? 0 : Number(body.amount||0); if (current+delta<0) return sendJson(res,200,{success:false,message:round(current),errorCode:4}); balances.set(user,round(current+delta)); transactions.set(`ggx:${tx}`,{user,delta}); sendJson(res,200,{success:true,message:round(current+delta),errorCode:0}); }
+async function handleGgxBalance(req, res) { if (!validGgxAuth(req)) return sendJson(res, 200, {success:false,message:0,errorCode:401}); const body=await readJson(req); const balance=database.enabled?await database.getBalance(body.userCode):round(balances.get(body.userCode)||0); sendJson(res,200,{success:true,message:balance,errorCode:0}); }
+async function handleGgxTransaction(req, res) { if (!validGgxAuth(req)) return sendJson(res,200,{success:false,message:0,errorCode:401}); const body=await readJson(req); const user=body.userCode; const tx=String(body.transactionCode||body.historyId); if (!user || !tx) return sendJson(res,200,{success:false,message:0,errorCode:400}); if (database.enabled) { const result=await database.applyWalletTransaction({userCode:user,externalId:`ggx:${tx}`,amount:Number(body.isCanceled)?0:Number(body.amount||0),kind:Number(body.amount||0)<0?'bet':'win',provider:'goldengatex',metadata:body}); return sendJson(res,200,{success:!result.insufficient,message:result.balance,errorCode:result.insufficient?4:0}); } if (transactions.has(`ggx:${tx}`)) return sendJson(res,200,{success:false,message:round(balances.get(user)||0),errorCode:6}); const current=Number(balances.get(user)||0); const delta=Number(body.isCanceled) ? 0 : Number(body.amount||0); if (current+delta<0) return sendJson(res,200,{success:false,message:round(current),errorCode:4}); balances.set(user,round(current+delta)); transactions.set(`ggx:${tx}`,{user,delta}); sendJson(res,200,{success:true,message:round(current+delta),errorCode:0}); }
+async function adminLogin(req,res){ if(!database.enabled||!process.env.ADMIN_JWT_SECRET)return sendJson(res,503,{error:'Admin database is not configured yet'});const body=await readJson(req);const admin=await database.authenticateAdmin(body.email||'',body.password||'');if(!admin)return sendJson(res,401,{error:'Invalid admin credentials'});sendJson(res,200,{token:jwt.sign(admin,process.env.ADMIN_JWT_SECRET,{expiresIn:'8h'}),admin}); }
 
 const balances = new Map();
 const transactions = new Map();
