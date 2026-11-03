@@ -1,4 +1,4 @@
-const categories = document.querySelectorAll('.category');
+﻿const categories = document.querySelectorAll('.category');
 let cards = document.querySelectorAll('.game-card');
 const search = document.querySelector('#gameSearch');
 const empty = document.querySelector('#emptyState');
@@ -92,3 +92,4 @@ document.querySelector('#wheelBtn').addEventListener('click',()=>{wheelModal.cla
 function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
 function escapeAttr(value) { return String(value || '').replace(/['"\\]/g, char => `\\${char}`); }
 loadProviderGames();
+
