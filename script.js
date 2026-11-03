@@ -84,6 +84,9 @@ document.querySelector('#profileBtn').addEventListener('click', () => authModal.
 document.querySelector('.register-btn').addEventListener('click', event => { event.preventDefault(); authModal.classList.add('open'); });
 document.querySelector('#authClose').addEventListener('click', () => authModal.classList.remove('open'));
 document.querySelector('#authForm').addEventListener('submit', event => { event.preventDefault(); toast.textContent = 'Auth backend-i qoşulduqdan sonra giriş aktiv olacaq.'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2500); });
+const wheelModal=document.querySelector('#wheelModal'); const bigWheel=document.querySelector('#bigWheel'); const wheelMessage=document.querySelector('#wheelMessage');
+function spinWheel(){bigWheel.style.transform=`rotate(${720+Math.floor(Math.random()*360)}deg)`;wheelMessage.textContent='Şansın hazırlanır...';setTimeout(()=>wheelMessage.textContent=['₼10 bonus','Pulsuz oyun','₼25 bonus','Yenidən cəhd et'][Math.floor(Math.random()*4)],1100)}
+document.querySelector('#wheelBtn').addEventListener('click',()=>{wheelModal.classList.add('open');spinWheel()});document.querySelector('#spinAgain').addEventListener('click',spinWheel);document.querySelector('#closeWheel').addEventListener('click',()=>wheelModal.classList.remove('open'));
 function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
 function escapeAttr(value) { return String(value || '').replace(/['"\\]/g, char => `\\${char}`); }
 loadProviderGames();
