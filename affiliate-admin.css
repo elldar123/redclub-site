@@ -1,0 +1,1 @@
+.affiliate-row{display:grid;grid-template-columns:1fr 1.5fr .5fr 1fr;gap:12px;align-items:center;border-bottom:1px solid #29292d;padding:14px 10px;font-size:11px}.affiliate-row strong{color:#e31b2e}.affiliate-row small{color:#888}@media(max-width:700px){.affiliate-row{grid-template-columns:1fr 1fr}.affiliate-row small{grid-column:span 2}}
