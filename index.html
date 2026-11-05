@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="final-responsive.css" />
   <link rel="stylesheet" href="redx-catalog.css" />
   <link rel="stylesheet" href="redxgames-colors.css" />
+  <link rel="stylesheet" href="catalog-rebuild.css" />
   <link rel="stylesheet" href="mobile-hero-fix.css" />
   <link rel="stylesheet" href="fun-zone.css" />
   <link rel="stylesheet" href="luxury.css" />
@@ -51,17 +52,15 @@
     <nav class="main-nav" aria-label="Əsas menyu">
       <a class="active" href="#top">Ana səhifə</a>
       <a href="#games">Oyunlar</a>
-      <a href="/loto.html">Loto</a>
-      <a href="#sports">İdman</a>
-      <a href="#casino">Casino</a>
-      <a href="#categories">Kategoriyalar</a>
-      <a href="#about">Haqqımızda</a>
+      <a href="#tournaments">Turnirlər</a>
+      <a href="#bonuses">Bonuslar</a>
     </nav>
     <div class="header-actions">
       <button class="icon-btn" id="searchToggle" aria-label="Axtarış">⌕</button>
       <button class="profile-btn" id="profileBtn"><span class="profile-avatar">✦</span><span>Giriş</span></button>
       <button class="slip-toggle" id="slipToggle">Kupon <b id="slipCount">0</b></button>
       <a class="register-btn" href="#auth">Qeydiyyat</a>
+      <select class="language-select" aria-label="Dil"><option>AZ</option><option>RU</option><option>EN</option></select>
       <button class="menu-btn" id="menuToggle" aria-label="Menyunu aç">☰</button>
     </div>
   </header>
@@ -118,6 +117,8 @@
         <article class="match-card"><div class="match-meta"><span class="upcoming">● 21:00</span><small>E-sport · CS2</small></div><div class="teams"><b>NAVI</b><strong>— : —</strong><b>Spirit</b></div><div class="odds"><button data-match="NAVI - Spirit" data-pick="1" data-odd="1.86">1 <b>1.86</b></button><button data-match="NAVI - Spirit" data-pick="X" data-odd="-">X <b>—</b></button><button data-match="NAVI - Spirit" data-pick="2" data-odd="1.94">2 <b>1.94</b></button></div></article>
       </div>
     </section>
+
+    <section class="catalog-promos" id="bonuses"><a href="#games"><small>REDX BONUS</small><strong>OYUNA BAŞLA<br /><em>QAZANMAĞA DAVAM ET</em></strong><span>Oyun kataloquna keç →</span></a><a href="#tournaments" id="tournaments"><small>BU HƏFTƏ</small><strong>VIP<br /><em>TURNİRİ</em></strong><span>Yarışa qoşul →</span></a></section>
 <section class="games-section" id="games">
       <div class="section-heading"><div><p class="eyebrow">OYUN KOLLEKSİYASI</p><h2>BUGÜN NƏ OYNAYIRSAN?</h2></div><a href="#games" class="all-games">Hamısını gör <span>→</span></a></div>
       <div class="toolbar"><div class="categories" id="categories"><button class="category active" data-category="all">Hamısı</button><button class="category" data-category="action">Aksiyon</button><button class="category" data-category="arcade">Arcade</button><button class="category" data-category="puzzle">Puzzle</button><button class="category" data-category="sport">İdman</button></div><label class="search-box"><span>⌕</span><input id="gameSearch" type="search" placeholder="Oyun axtar..." /></label></div>
