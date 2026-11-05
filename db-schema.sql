@@ -1,4 +1,6 @@
-CREATE TABLE admin_users (id BIGSERIAL PRIMARY KEY,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'support',created_at TIMESTAMPTZ DEFAULT now(),last_login_at TIMESTAMPTZ);
+CREATE TABLE admin_users (id BIGSERIAL PRIMARY KEY,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'support',totp_secret TEXT,totp_enabled BOOLEAN NOT NULL DEFAULT false,created_at TIMESTAMPTZ DEFAULT now(),last_login_at TIMESTAMPTZ);
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false;
 CREATE TABLE users (id BIGSERIAL PRIMARY KEY,external_code TEXT UNIQUE NOT NULL,email TEXT UNIQUE,password_hash TEXT,currency CHAR(3) NOT NULL DEFAULT 'AZN',balance NUMERIC(18,2) NOT NULL DEFAULT 0,kyc_status TEXT NOT NULL DEFAULT 'pending',created_at TIMESTAMPTZ DEFAULT now(),updated_at TIMESTAMPTZ DEFAULT now());
 CREATE TABLE wallet_transactions (id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id),external_id TEXT UNIQUE,kind TEXT NOT NULL,amount NUMERIC(18,2) NOT NULL,balance_before NUMERIC(18,2) NOT NULL,balance_after NUMERIC(18,2) NOT NULL,status TEXT NOT NULL,provider TEXT,created_at TIMESTAMPTZ DEFAULT now());
 CREATE TABLE audit_logs (id BIGSERIAL PRIMARY KEY,admin_id BIGINT REFERENCES admin_users(id),action TEXT NOT NULL,entity TEXT,entity_id TEXT,metadata JSONB,created_at TIMESTAMPTZ DEFAULT now());
