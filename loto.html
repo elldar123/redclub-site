@@ -206,7 +206,9 @@ $("go").onclick=function(){
   try{if(nm)localStorage.setItem("loto_name",nm)}catch(e){}
   if(!$("ad").checked){$("err").textContent="Davam etmək üçün 18 yaşınızın tamam olduğunu təsdiqləyin";return}
   joinOpts={name:nm||CFG.player};
-  $("err").textContent="Qoşulur...";connect();
+  if(!CFG.token){$("err").textContent="Əvvəlcə saytda hesabınıza daxil olun";return}
+  $("err").textContent="Bilet alınır...";
+  fetch("/api/loto/ticket",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+CFG.token},body:"{}"}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"Bilet alınmadı");$("err").textContent="Bilet alındı, oyuna qoşulursunuz...";connect()})}).catch(function(e){$("err").textContent=e.message});
 };
 $("home").onclick=function(){if(!S||S.over||confirm("Oyundan çıxmaq istəyirsiniz?"))again()};
 $("snd").onclick=function(){mute=!mute;this.textContent=mute?"🔇":"🔊"};
