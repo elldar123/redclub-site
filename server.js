@@ -45,6 +45,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && parsed.pathname === '/api/admin/promos') return adminPromos(req, res, true);
     if (req.method === 'GET' && parsed.pathname === '/api/admin/bonuses') return adminBonuses(req, res, false);
     if (req.method === 'POST' && parsed.pathname === '/api/admin/bonuses') return adminBonuses(req, res, true);
+    if (req.method === 'GET' && parsed.pathname === '/api/admin/providers') return adminProviders(req, res, false);
+    if (req.method === 'POST' && parsed.pathname === '/api/admin/providers') return adminProviders(req, res, true);
     if (req.method === 'POST' && parsed.pathname === '/api/auth/register') return userRegister(req, res);
     if (req.method === 'POST' && parsed.pathname === '/api/auth/login') return userLogin(req, res);
     if (req.method === 'GET' && parsed.pathname === '/api/callback/apilx') {
@@ -128,6 +130,7 @@ async function admin2faVerify(req,res){const admin=adminAuth(req);if(!admin)retu
 async function adminUsers(req,res){if(!database.enabled)return sendJson(res,503,{error:'Database is not configured'});if(!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});sendJson(res,200,{users:await database.listUsers()});}
 async function adminPromos(req,res,create){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});try{if(create){const b=await readJson(req);return sendJson(res,201,await database.createPromo(b.code,b.bonusId,b.usageLimit,b.expiresAt))}sendJson(res,200,{promos:await database.listPromos()})}catch(e){sendJson(res,e.code==='23505'?409:500,{error:e.code==='23505'?'Promo code already exists':'Promo operation failed'})}}
 async function adminBonuses(req,res,create){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(create){const b=await readJson(req);return sendJson(res,201,await database.createBonus(b.title,b.kind,b.amount,b.wagerMultiplier))}sendJson(res,200,{bonuses:await database.listBonuses()})}
+async function adminProviders(req,res,update){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(update){const b=await readJson(req);return sendJson(res,200,await database.setProviderControl(b.code,b.name,b.enabled,b.mode||'staging'))}sendJson(res,200,{providers:await database.listProviderControls()})}
 
 const balances = new Map();
 const transactions = new Map();
