@@ -10,3 +10,4 @@ const modal=$('#loginModal');$('#openLogin').onclick=()=>{state.auth='login';mod
 
 if($('#closeGame'))$('#closeGame').onclick=()=>{ $('#gameFrame').src='about:blank'; $('#gameModal').classList.remove('open'); document.body.style.overflow='' };
 
+
