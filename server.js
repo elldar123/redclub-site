@@ -41,6 +41,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && parsed.pathname === '/api/admin/affiliates') return adminAffiliates(req, res, false);
     if (req.method === 'POST' && parsed.pathname === '/api/admin/affiliates') return adminAffiliates(req, res, true);
     if (req.method === 'GET' && parsed.pathname === '/api/admin/users') return adminUsers(req, res);
+    if (req.method === 'GET' && parsed.pathname === '/api/admin/promos') return adminPromos(req, res, false);
+    if (req.method === 'POST' && parsed.pathname === '/api/admin/promos') return adminPromos(req, res, true);
+    if (req.method === 'GET' && parsed.pathname === '/api/admin/bonuses') return adminBonuses(req, res, false);
+    if (req.method === 'POST' && parsed.pathname === '/api/admin/bonuses') return adminBonuses(req, res, true);
     if (req.method === 'POST' && parsed.pathname === '/api/auth/register') return userRegister(req, res);
     if (req.method === 'POST' && parsed.pathname === '/api/auth/login') return userLogin(req, res);
     if (req.method === 'GET' && parsed.pathname === '/api/callback/apilx') {
@@ -122,6 +126,8 @@ async function adminAffiliates(req,res,create){if(!database.enabled)return sendJ
 async function admin2faSetup(req,res){const admin=adminAuth(req);if(!admin)return sendJson(res,401,{error:'Admin authentication required'});const secret=authenticator.generateSecret();await database.saveTotp(admin.id,secret);const uri=authenticator.keyuri(admin.email,'REDX Admin',secret);sendJson(res,200,{secret,qrCode:await QRCode.toDataURL(uri),message:'Scan QR and confirm with a code'});}
 async function admin2faVerify(req,res){const admin=adminAuth(req);if(!admin)return sendJson(res,401,{error:'Admin authentication required'});const body=await readJson(req);const row=await database.getAdmin(admin.id);if(!row?.totp_secret||!authenticator.check(String(body.otp||''),row.totp_secret))return sendJson(res,400,{error:'Invalid authenticator code'});await database.enableTotp(admin.id);sendJson(res,200,{enabled:true});}
 async function adminUsers(req,res){if(!database.enabled)return sendJson(res,503,{error:'Database is not configured'});if(!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});sendJson(res,200,{users:await database.listUsers()});}
+async function adminPromos(req,res,create){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});try{if(create){const b=await readJson(req);return sendJson(res,201,await database.createPromo(b.code,b.bonusId,b.usageLimit,b.expiresAt))}sendJson(res,200,{promos:await database.listPromos()})}catch(e){sendJson(res,e.code==='23505'?409:500,{error:e.code==='23505'?'Promo code already exists':'Promo operation failed'})}}
+async function adminBonuses(req,res,create){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(create){const b=await readJson(req);return sendJson(res,201,await database.createBonus(b.title,b.kind,b.amount,b.wagerMultiplier))}sendJson(res,200,{bonuses:await database.listBonuses()})}
 
 const balances = new Map();
 const transactions = new Map();
