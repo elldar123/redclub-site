@@ -11,3 +11,4 @@ const modal=$('#loginModal');function authView(mode){state.auth=mode;const reg=m
 if($('#closeGame'))$('#closeGame').onclick=()=>{ $('#gameFrame').src='about:blank'; $('#gameModal').classList.remove('open'); document.body.style.overflow='' };
 
 
+
