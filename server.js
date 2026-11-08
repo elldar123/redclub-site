@@ -79,6 +79,7 @@ async function launchGame(req, res) {
   const provider = body.provider || process.env.APILX_PROVIDER || 'pragmatic';
   const config = providerConfig[provider];
   if (!config?.token || !config?.baseUrl) return sendJson(res, 503, { error: `API LX provider ${provider} is not configured yet`, setupRequired: true });
+  if (database.enabled) { const control=await database.query('SELECT enabled FROM provider_controls WHERE code=$1',[provider]); if(control.rowCount && !control.rows[0].enabled)return sendJson(res,403,{error:`Provider ${provider} is disabled by admin`}); }
 
   const upstream = await fetch(new URL(process.env.APILX_LAUNCH_PATH || '/userAuth', config.baseUrl), {
     method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${config.token}`, 'x-api-token': config.token },
