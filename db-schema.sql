@@ -1,7 +1,12 @@
 CREATE TABLE admin_users (id BIGSERIAL PRIMARY KEY,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'support',totp_secret TEXT,totp_enabled BOOLEAN NOT NULL DEFAULT false,created_at TIMESTAMPTZ DEFAULT now(),last_login_at TIMESTAMPTZ);
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
 ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false;
-CREATE TABLE users (id BIGSERIAL PRIMARY KEY,external_code TEXT UNIQUE NOT NULL,email TEXT UNIQUE,password_hash TEXT,country_code CHAR(2) NOT NULL DEFAULT 'AZ',language_code CHAR(2) NOT NULL DEFAULT 'az',currency CHAR(3) NOT NULL DEFAULT 'AZN',balance NUMERIC(18,2) NOT NULL DEFAULT 0,kyc_status TEXT NOT NULL DEFAULT 'pending',created_at TIMESTAMPTZ DEFAULT now(),updated_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE users (id BIGSERIAL PRIMARY KEY,external_code TEXT UNIQUE NOT NULL,email TEXT UNIQUE,phone TEXT,birth_date DATE,password_hash TEXT,promo_code TEXT,country_code CHAR(2) NOT NULL DEFAULT 'AZ',language_code CHAR(2) NOT NULL DEFAULT 'az',currency CHAR(3) NOT NULL DEFAULT 'AZN',balance NUMERIC(18,2) NOT NULL DEFAULT 0,kyc_status TEXT NOT NULL DEFAULT 'pending',created_at TIMESTAMPTZ DEFAULT now(),updated_at TIMESTAMPTZ DEFAULT now());
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS promo_code TEXT;
+CREATE TABLE IF NOT EXISTS kyc_documents (id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id),document_type TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',file_url TEXT,reviewed_by BIGINT REFERENCES admin_users(id),reviewed_at TIMESTAMPTZ,created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS responsible_limits (user_id BIGINT PRIMARY KEY REFERENCES users(id),deposit_daily NUMERIC(18,2),deposit_weekly NUMERIC(18,2),loss_daily NUMERIC(18,2),session_minutes INT,self_excluded_until TIMESTAMPTZ,updated_at TIMESTAMPTZ DEFAULT now());
 ALTER TABLE users ADD COLUMN IF NOT EXISTS country_code CHAR(2) NOT NULL DEFAULT 'AZ';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS language_code CHAR(2) NOT NULL DEFAULT 'az';
 CREATE TABLE wallet_transactions (id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id),external_id TEXT UNIQUE,kind TEXT NOT NULL,amount NUMERIC(18,2) NOT NULL,balance_before NUMERIC(18,2) NOT NULL,balance_after NUMERIC(18,2) NOT NULL,status TEXT NOT NULL,provider TEXT,created_at TIMESTAMPTZ DEFAULT now());
