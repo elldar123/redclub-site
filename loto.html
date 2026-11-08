@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="az">
 <head>
 <meta charset="utf-8">
@@ -101,7 +101,7 @@ dialog::backdrop{background:#000b}dialog ol{text-align:left;padding-left:22px;fo
  window.LOTO_CONFIG = {ws:"wss://sizin-sayt.az", brand:"RED LOTO", player:"Aysel"}
  Serveriniz eyni ünvandan işləyirsə heç nə yazmaq lazım deyil.
  DİQQƏT: gizli API açarı burada olmamalıdır, o yalnız serverin mühit dəyişənində saxlanır. */
-var CFG=Object.assign({ws:"",token:"",player:"",brand:""},window.LOTO_CONFIG||{});
+var CFG=Object.assign({ws:"",token:localStorage.getItem("redx_token")||"",player:"",brand:""},window.LOTO_CONFIG||{});
 function $(i){return document.getElementById(i)}
 var AC=null,mute=false;
 function beep(f,d,ty){if(mute)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=ty||"sine";o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
@@ -223,3 +223,4 @@ if(CFG.brand){$("brand").textContent=CFG.brand;$("brand2").textContent=CFG.brand
 </script>
 </body>
 </html>
+
