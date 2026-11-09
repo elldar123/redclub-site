@@ -53,6 +53,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && parsed.pathname === '/api/admin/providers') return adminProviders(req, res, true);
     if (req.method === 'GET' && parsed.pathname === '/api/admin/payments') return adminPayments(req, res, false);
     if (req.method === 'POST' && parsed.pathname === '/api/admin/payments') return adminPayments(req, res, true);
+    if (req.method === 'GET' && parsed.pathname === '/api/admin/wheel') return adminWheel(req, res, false);
+    if (req.method === 'POST' && parsed.pathname === '/api/admin/wheel') return adminWheel(req, res, true);
+    if (req.method === 'POST' && parsed.pathname === '/api/wheel/spin') return playerWheelSpin(req, res);
+    if (req.method === 'GET' && parsed.pathname === '/api/wheel') return playerWheelConfig(res);
     if (req.method === 'POST' && parsed.pathname === '/api/auth/register') return userRegister(req, res);
     if (req.method === 'POST' && parsed.pathname === '/api/auth/login') return userLogin(req, res);
     if (req.method === 'GET' && parsed.pathname === '/api/callback/apilx') {
@@ -146,6 +150,9 @@ async function adminPromos(req,res,create){if(!database.enabled||!adminAuth(req)
 async function adminBonuses(req,res,create){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(create){const b=await readJson(req);return sendJson(res,201,await database.createBonus(b.title,b.kind,b.amount,b.wagerMultiplier))}sendJson(res,200,{bonuses:await database.listBonuses()})}
 async function adminProviders(req,res,update){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(update){const b=await readJson(req);return sendJson(res,200,await database.setProviderControl(b.code,b.name,b.enabled,b.mode||'staging'))}sendJson(res,200,{providers:await database.listProviderControls()})}
 async function adminPayments(req,res,update){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(update){const b=await readJson(req);return sendJson(res,200,await database.setPaymentControl(b.code,b.name,b.enabled,b.mode||'staging',b.currency||'AZN'))}sendJson(res,200,{payments:await database.listPaymentControls()})}
+async function adminWheel(req,res,update){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(update){const b=await readJson(req);return sendJson(res,200,await database.setWheel(Boolean(b.enabled),Number(b.dailyLimit||1),Array.isArray(b.rewards)?b.rewards:[]))}sendJson(res,200,{wheel:await database.getWheel()})}
+async function playerWheelSpin(req,res){if(!database.enabled)return sendJson(res,503,{error:'Database is not configured'});const user=userAuth(req);if(!user)return sendJson(res,401,{error:'Login required'});try{sendJson(res,200,{spin:await database.spinWheel(user.id)})}catch(e){sendJson(res,400,{error:e.message})}}
+async function playerWheelConfig(res){if(!database.enabled)return sendJson(res,503,{error:'Database is not configured'});const w=await database.getWheel();sendJson(res,200,{enabled:Boolean(w.enabled),dailyLimit:w.daily_limit,rewards:w.rewards||[]})}
 
 const balances = new Map();
 const transactions = new Map();
