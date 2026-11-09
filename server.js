@@ -4,6 +4,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const { attachLoto } = require('./loto-server');
+const { makeTicket } = require('./loto-cards');
 const database = require('./database');
 const jwt = require('jsonwebtoken');
 const { authenticator } = require('otplib');
@@ -145,7 +146,22 @@ async function adminKyc(req,res,update){if(!database.enabled||!adminAuth(req))re
 async function adminLimits(req,res,update){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(update){const b=await readJson(req);return sendJson(res,200,await database.setLimits(b.userId,b))}sendJson(res,200,{limits:await database.listLimits()})}
 async function lotoRound(res){if(!database.enabled)return sendJson(res,503,{error:'Database is not configured'});sendJson(res,200,{round:await database.openLotoRound(Number(process.env.LOTO_TICKET_PRICE||1),Number(process.env.LOTO_ROUND_SECONDS||120))})}
 function userAuth(req){try{const h=req.headers.authorization||'';if(!h.startsWith('Bearer ')||!process.env.ADMIN_JWT_SECRET)return null;return jwt.verify(h.slice(7),process.env.ADMIN_JWT_SECRET)}catch{return null}}
-async function lotoTicket(req,res){if(!database.enabled)return sendJson(res,503,{error:'Database is not configured'});const user=userAuth(req);if(!user)return sendJson(res,401,{error:'Login required'});const round=await database.openLotoRound(Number(process.env.LOTO_TICKET_PRICE||1),Number(process.env.LOTO_ROUND_SECONDS||120));const numbers=[];while(numbers.length<15){const n=crypto.randomInt(1,91);if(!numbers.includes(n))numbers.push(n)}numbers.sort((a,b)=>a-b);const result=await database.buyLotoTicket(user.id,user.externalCode,round.id,numbers,Number(round.ticket_price));if(result.insufficient)return sendJson(res,400,{error:'Insufficient balance'});sendJson(res,201,result)}
+async function lotoTicket(req,res){
+  if(!database.enabled)return sendJson(res,503,{error:'Database is not configured'});
+  const user=userAuth(req);if(!user)return sendJson(res,401,{error:'Login required'});
+  const body=await readJson(req).catch(()=>({}));
+  const count=Math.min(2,Math.max(1,Number(body.count||1)));
+  const round=await database.openLotoRound(Number(process.env.LOTO_TICKET_PRICE||1),Number(process.env.LOTO_ROUND_SECONDS||120));
+  const tickets=[];
+  for(let i=0;i<count;i++){
+    const card=makeTicket();
+    const result=await database.buyLotoTicket(user.id,user.externalCode,round.id,card.numbers,Number(round.ticket_price));
+    if(result.insufficient)return sendJson(res,400,{error:'Insufficient balance',balance:result.balance,bonusBalance:result.bonusBalance});
+    tickets.push({...result.ticket,grid:card.grid,balance:result.balance,bonusBalance:result.bonusBalance,fundedBy:result.fundedBy});
+  }
+  const last=tickets[tickets.length-1];
+  sendJson(res,201,{round,tickets,balance:last.balance,bonusBalance:last.bonusBalance});
+}
 async function adminPromos(req,res,create){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});try{if(create){const b=await readJson(req);return sendJson(res,201,await database.createPromo(b.code,b.bonusId,b.usageLimit,b.expiresAt))}sendJson(res,200,{promos:await database.listPromos()})}catch(e){sendJson(res,e.code==='23505'?409:500,{error:e.code==='23505'?'Promo code already exists':'Promo operation failed'})}}
 async function adminBonuses(req,res,create){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(create){const b=await readJson(req);return sendJson(res,201,await database.createBonus(b.title,b.kind,b.amount,b.wagerMultiplier))}sendJson(res,200,{bonuses:await database.listBonuses()})}
 async function adminProviders(req,res,update){if(!database.enabled||!adminAuth(req))return sendJson(res,401,{error:'Admin authentication required'});if(update){const b=await readJson(req);return sendJson(res,200,await database.setProviderControl(b.code,b.name,b.enabled,b.mode||'staging'))}sendJson(res,200,{providers:await database.listProviderControls()})}

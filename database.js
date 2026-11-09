@@ -47,6 +47,104 @@ async function listKyc(){const r=await query('SELECT k.*,u.email,u.external_code
 async function updateKyc(id,status,adminId){const r=await query('UPDATE kyc_documents SET status=$1,reviewed_by=$2,reviewed_at=now() WHERE id=$3 RETURNING *',[status,adminId,id]);return r.rows[0]}
 async function listLimits(){const r=await query('SELECT l.*,u.email,u.external_code FROM responsible_limits l JOIN users u ON u.id=l.user_id ORDER BY l.updated_at DESC LIMIT 500');return r.rows}
 async function setLimits(userId,values){const r=await query('INSERT INTO responsible_limits(user_id,deposit_daily,deposit_weekly,loss_daily,session_minutes,self_excluded_until) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(user_id) DO UPDATE SET deposit_daily=$2,deposit_weekly=$3,loss_daily=$4,session_minutes=$5,self_excluded_until=$6,updated_at=now() RETURNING *',[userId,values.depositDaily||null,values.depositWeekly||null,values.lossDaily||null,values.sessionMinutes||null,values.selfExcludedUntil||null]);return r.rows[0]}
-async function openLotoRound(price=1,seconds=120){const existing=await query("SELECT * FROM loto_rounds WHERE status='open' ORDER BY id DESC LIMIT 1");if(existing.rowCount)return existing.rows[0];const code=`REDX-${Date.now()}`;const r=await query("INSERT INTO loto_rounds(round_code,ticket_price,draw_interval_seconds,status,started_at) VALUES($1,$2,$3,'open',now()) RETURNING *",[code,price,seconds]);return r.rows[0]}
-async function buyLotoTicket(userId,userCode,roundId,numbers,price){const client=await pool.connect();try{await client.query('BEGIN');const u=await client.query('SELECT id,balance FROM users WHERE id=$1 FOR UPDATE',[userId]);if(!u.rowCount||Number(u.rows[0].balance)<price){await client.query('ROLLBACK');return {insufficient:true}}const before=Number(u.rows[0].balance),after=before-price,external=`loto:${roundId}:${userId}:${Date.now()}`;await client.query('UPDATE users SET balance=$1,updated_at=now() WHERE id=$2',[after,userId]);await client.query('INSERT INTO wallet_transactions(user_id,external_id,kind,amount,balance_before,balance_after,status,provider) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[userId,external,'loto_ticket',-price,before,after,'success','redx-loto']);const t=await client.query('INSERT INTO loto_tickets(round_id,user_id,numbers,ticket_price,external_id) VALUES($1,$2,$3,$4,$5) RETURNING id,round_id,numbers,ticket_price,external_id',[roundId,userId,numbers,price,external]);await client.query('COMMIT');return {ticket:t.rows[0],balance:after}}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}}
- module.exports = { enabled, query, getBalance, applyWalletTransaction, authenticateAdmin, createAdmin, createUser, authenticateUser, createAffiliate, listAffiliates, createBonus, listBonuses, createPromo, listPromos, listProviderControls, setProviderControl, listPaymentControls, setPaymentControl, getWheel, setWheel, spinWheel, listUsers, listKyc, updateKyc, listLimits, setLimits, openLotoRound, buyLotoTicket, getAdmin, saveTotp, enableTotp };
+async function openLotoRound(price = 1, seconds = 120) {
+  const existing = await query("SELECT * FROM loto_rounds WHERE status='open' ORDER BY id DESC LIMIT 1");
+  if (existing.rowCount) return existing.rows[0];
+  const code = `REDX-${Date.now()}`;
+  const r = await query("INSERT INTO loto_rounds(round_code,ticket_price,draw_interval_seconds,status,started_at) VALUES($1,$2,$3,'open',now()) RETURNING *", [code, price, seconds]);
+  return r.rows[0];
+}
+
+/* Ticket price is taken from cash first, then from the bonus wallet
+   while the platform is in demo/staging mode. */
+async function buyLotoTicket(userId, userCode, roundId, numbers, price) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const u = await client.query('SELECT id,balance,bonus_balance FROM users WHERE id=$1 FOR UPDATE', [userId]);
+    if (!u.rowCount) { await client.query('ROLLBACK'); return { insufficient: true, balance: 0, bonusBalance: 0 }; }
+    const cash = Number(u.rows[0].balance);
+    const bonus = Number(u.rows[0].bonus_balance);
+    const cost = Number(price);
+    let field = 'balance';
+    let fundedBy = 'cash';
+    let before = cash;
+    if (cash < cost && bonus >= cost) { field = 'bonus_balance'; fundedBy = 'bonus'; before = bonus; }
+    if (cash < cost && bonus < cost) {
+      await client.query('ROLLBACK');
+      return { insufficient: true, balance: cash, bonusBalance: bonus };
+    }
+    const after = Math.round((before - cost) * 100) / 100;
+    await client.query(`UPDATE users SET ${field}=$1, updated_at=now() WHERE id=$2`, [after, userId]);
+    const external = `loto:${roundId}:${userId}:${Date.now()}:${Math.floor(Math.random() * 1e6)}`;
+    await client.query('INSERT INTO wallet_transactions(user_id,external_id,kind,amount,balance_before,balance_after,status,provider,metadata) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)', [userId, external, 'loto_ticket', -cost, before, after, 'success', 'redx-loto', JSON.stringify({ roundId, fundedBy })]);
+    const t = await client.query('INSERT INTO loto_tickets(round_id,user_id,numbers,ticket_price,external_id,funded_by) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,round_id,numbers,ticket_price,external_id,funded_by', [roundId, userId, numbers, cost, external, fundedBy]);
+    await client.query('COMMIT');
+    return {
+      ticket: t.rows[0],
+      balance: fundedBy === 'cash' ? after : cash,
+      bonusBalance: fundedBy === 'bonus' ? after : bonus,
+      fundedBy,
+    };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function creditLotoWin({ userId, roundId, ticketId, pattern, amount, fundedBy = 'cash' }) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const external = `loto-win:${roundId}:${ticketId}:${pattern}`;
+    const duplicate = await client.query('SELECT balance_after FROM wallet_transactions WHERE external_id=$1 FOR UPDATE', [external]);
+    if (duplicate.rowCount) {
+      const u = await client.query('SELECT balance,bonus_balance FROM users WHERE id=$1', [userId]);
+      await client.query('COMMIT');
+      return { duplicate: true, balance: Number(u.rows[0]?.balance || 0), bonusBalance: Number(u.rows[0]?.bonus_balance || 0) };
+    }
+    const u = await client.query('SELECT balance,bonus_balance FROM users WHERE id=$1 FOR UPDATE', [userId]);
+    if (!u.rowCount) { await client.query('ROLLBACK'); return { balance: 0, bonusBalance: 0 }; }
+    const field = fundedBy === 'bonus' ? 'bonus_balance' : 'balance';
+    const before = Number(u.rows[0][field]);
+    const change = Math.round(Number(amount) * 100) / 100;
+    const after = Math.round((before + change) * 100) / 100;
+    await client.query(`UPDATE users SET ${field}=$1, updated_at=now() WHERE id=$2`, [after, userId]);
+    await client.query('INSERT INTO wallet_transactions(user_id,external_id,kind,amount,balance_before,balance_after,status,provider,metadata) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)', [userId, external, 'loto_win', change, before, after, 'success', 'redx-loto', JSON.stringify({ roundId, ticketId, pattern, fundedBy })]);
+    await client.query('INSERT INTO loto_payouts(round_id,ticket_id,user_id,pattern,amount,transaction_id,status) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(transaction_id) DO NOTHING', [roundId, ticketId, userId, pattern, change, external, 'paid']);
+    await client.query('COMMIT');
+    const cash = fundedBy === 'cash' ? after : Number(u.rows[0].balance);
+    const bonus = fundedBy === 'bonus' ? after : Number(u.rows[0].bonus_balance);
+    return { balance: cash, bonusBalance: bonus };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function closeLotoRound(roundId, winningNumbers = [], jackpot = 0) {
+  const r = await query("UPDATE loto_rounds SET status='closed', closed_at=now(), winning_numbers=$2, jackpot_amount=$3 WHERE id=$1 RETURNING *", [roundId, winningNumbers, jackpot]);
+  return r.rows[0];
+}
+
+async function closeLotoTickets(roundId, winnerTicketIds = []) {
+  const ids = (winnerTicketIds || []).map(Number).filter(Number.isInteger);
+  if (ids.length) {
+    await query("UPDATE loto_tickets SET status='won' WHERE round_id=$1 AND id = ANY($2::bigint[])", [roundId, ids]);
+  }
+  await query("UPDATE loto_tickets SET status='lost' WHERE round_id=$1 AND status='active'", [roundId]);
+  return true;
+}
+
+async function getLotoTickets(userId, roundId = null) {
+  const r = roundId
+    ? await query('SELECT id,round_id,numbers,ticket_price,external_id,funded_by,status FROM loto_tickets WHERE user_id=$1 AND round_id=$2 ORDER BY id', [userId, roundId])
+    : await query('SELECT id,round_id,numbers,ticket_price,external_id,funded_by,status FROM loto_tickets WHERE user_id=$1 ORDER BY id DESC LIMIT 20', [userId]);
+  return r.rows;
+}
+
+module.exports = { enabled, query, getBalance, applyWalletTransaction, authenticateAdmin, createAdmin, createUser, authenticateUser, createAffiliate, listAffiliates, createBonus, listBonuses, createPromo, listPromos, listProviderControls, setProviderControl, listPaymentControls, setPaymentControl, getWheel, setWheel, spinWheel, listUsers, listKyc, updateKyc, listLimits, setLimits, openLotoRound, buyLotoTicket, creditLotoWin, closeLotoRound, closeLotoTickets, getLotoTickets, getAdmin, saveTotp, enableTotp };

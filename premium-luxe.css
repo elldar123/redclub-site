@@ -864,6 +864,117 @@ a { transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease; }
   text-transform: uppercase;
 }
 
+/* live Loto card */
+
+.live-pill-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.live-pill-live:hover {
+  color: #1a0f02 !important;
+  border-color: var(--gold);
+  background: var(--gold);
+}
+.live-pill-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red-soft);
+  box-shadow: 0 0 0 0 rgba(255, 64, 83, 0.6);
+  animation: liveDot 1.7s infinite;
+}
+a.live-card { text-decoration: none; color: inherit; }
+.live-card.live-loto {
+  background:
+    radial-gradient(circle at 86% 8%, rgba(244, 193, 93, 0.16), transparent 46%),
+    linear-gradient(145deg, #2a0b12, #150810 56%, #0b080c);
+  border-color: rgba(244, 193, 93, 0.32);
+}
+.live-card.live-loto::before {
+  background:
+    radial-gradient(circle at 84% 16%, rgba(244, 193, 93, 0.26), transparent 52%),
+    radial-gradient(circle at 20% 92%, rgba(225, 29, 46, 0.24), transparent 58%);
+}
+.live-card.live-loto::after {
+  content: '';
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  bottom: -34%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244, 193, 93, 0.22), transparent 68%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+.live-card.live-loto h3 { font-size: 46px; letter-spacing: 0.01em; }
+.live-card.live-loto em span { margin-left: 4px; font-size: 13px; }
+.live-now {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid rgba(225, 29, 46, 0.45);
+  border-radius: 999px;
+  background: rgba(225, 29, 46, 0.16);
+  color: #ff9aa4;
+  font: 800 8px 'Sora', sans-serif;
+  letter-spacing: 0.18em;
+}
+.live-now b {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red-soft);
+  animation: liveDot 1.7s infinite;
+}
+.loto-orbit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.loto-orbit i {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: clamp(30px, 3.4vw, 44px);
+  height: clamp(30px, 3.4vw, 44px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 26%, #fffdf2, #f7d382 50%, #c38f26 100%);
+  border: 1px solid rgba(255, 238, 190, 0.72);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), inset 0 -5px 10px rgba(106, 66, 6, 0.25);
+  color: #3a2103;
+  font: 800 15px 'Barlow Condensed', sans-serif;
+  font-style: normal;
+  animation: lotoFloat 4.6s ease-in-out infinite alternate;
+}
+.loto-orbit i:nth-child(1) { top: 12%; right: 34%; }
+.loto-orbit i:nth-child(2) {
+  top: 22%;
+  right: 12%;
+  background: radial-gradient(circle at 34% 26%, #ffb3bb, #e11d2e 55%, #700711 100%);
+  color: #fff;
+  animation-delay: -1.2s;
+}
+.loto-orbit i:nth-child(3) { top: 42%; right: 26%; animation-delay: -2.3s; }
+.loto-orbit i:nth-child(4) {
+  top: 9%;
+  right: 6%;
+  width: clamp(22px, 2.4vw, 30px);
+  height: clamp(22px, 2.4vw, 30px);
+  font-size: 12px;
+  opacity: 0.8;
+  animation-delay: -3.1s;
+}
+
 /* ---------------- numbers ---------------- */
 
 .numbers {
@@ -1245,6 +1356,14 @@ footer p {
   from { opacity: 0; transform: translateX(-50%) translateY(10px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+@keyframes liveDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 64, 83, 0.55); opacity: 1; }
+  50% { box-shadow: 0 0 0 6px rgba(255, 64, 83, 0); opacity: 0.7; }
+}
+@keyframes lotoFloat {
+  from { transform: translate(0, 0) rotate(-3deg); }
+  to { transform: translate(4px, -8px) rotate(5deg); }
+}
 
 /* ---------------- responsive ---------------- */
 
@@ -1262,6 +1381,8 @@ footer p {
   .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .promos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .promos article:last-child { grid-column: 1 / -1; }
+  .live-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .live-card.live-loto { grid-column: 1 / -1; }
   footer { grid-template-columns: 1.3fr 1fr 1fr; }
   footer .footer-brand { grid-column: 1 / -1; }
 }
@@ -1358,6 +1479,9 @@ footer p {
   .live-grid { display: flex; gap: 10px; overflow-x: auto; margin-top: 22px; padding-bottom: 6px; scrollbar-width: none; }
   .live-grid::-webkit-scrollbar { display: none; }
   .live-card { flex: 0 0 250px; height: 200px; }
+  .live-card.live-loto { flex-basis: 286px; grid-column: auto; }
+  .live-card.live-loto h3 { font-size: 40px; }
+  .live-pill-live { margin-top: 10px; }
 
   .numbers { grid-template-columns: 1fr 1fr; padding: 30px 18px; }
   .numbers div { padding: 16px 0 16px 16px; }

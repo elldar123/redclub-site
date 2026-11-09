@@ -1,197 +1,630 @@
 "use strict";
-/* Onlayn loto serveri. Bütün çəkiliş, kartlar, xal və qalib serverdə təyin olunur. */
-const http = require("http"), fs = require("fs"), path = require("path"), crypto = require("crypto");
-const { WebSocketServer } = require("ws");
+/* REDX Live Loto — one live studio, server-authoritative 90-ball rounds.
+   Betting -> drawing -> result -> betting. All numbers, tickets, awards and
+   payouts are decided on the server. */
+const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+const database = require("./database");
+const { makeTicket, gridFromNumbers, ticketState, colOf } = require("./loto-cards");
 
-const PORT = +process.env.PORT || 3000;
-const ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
-const VERIFY_URL = process.env.VERIFY_URL || "";      // saytınızın token yoxlama ünvanı (ixtiyari)
-const RESULT_URL = process.env.RESULT_URL || "";      // nəticələrin göndəriləcəyi ünvan (ixtiyari)
-const API_KEY = process.env.SERVER_API_KEY || "";     // GİZLİ açar: yalnız burada, serverdə qalır
-const INTERVAL = 3500, LOBBY_MS = +process.env.LOBBY_MS || 120000, MAX_PLAYERS = 20, MIN_TOTAL = 3;
-const BOT_NAMES = ["Elçin", "Leyla", "Tural", "Nigar", "Rauf", "Aysel", "Kamran", "Səbinə"];
-const LB_FILE = path.join(__dirname, "data", "leaderboard.json");
+const TICKET_PRICE = () => Number(process.env.LOTO_TICKET_PRICE || 1);
+const BETTING_MS = () => Math.max(10000, Number(process.env.LOTO_BETTING_SECONDS || 30) * 1000);
+const BALL_MS = () => Math.max(300, Number(process.env.LOTO_BALL_MS || 2000));
+const RESULT_MS = () => Math.max(3000, Number(process.env.LOTO_RESULT_SECONDS || 8) * 1000);
+const MAX_TICKETS = 2;
+const MAX_PLAYERS = 10;
+const PRIZES = { line: 2, two: 5, full: 25 };
+const BOT_NAMES = ["Elçin", "Leyla", "Tural", "Nigar", "Rauf", "Aysel", "Kamran", "Səbinə", "Murad", "Günel"];
+const CHAT_MAX = 60;
+const BOOT_AT = Date.now();
 
-/* ---------- köməkçilər ---------- */
-const rnd = n => crypto.randomInt(n);
-function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-function mkCard() {
-  const rows = [0, 1, 2].map(() => shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8]).slice(0, 5));
-  const card = [[], [], []];
-  for (let c = 0; c < 9; c++) {
-    const rs = [0, 1, 2].filter(k => rows[k].includes(c));
-    const lo = c ? c * 10 : 1, hi = c === 8 ? 90 : c * 10 + 9, pool = [];
-    for (let v = lo; v <= hi; v++) pool.push(v);
-    const pk = shuffle(pool).slice(0, rs.length).sort((a, b) => a - b);
-    rs.forEach((k, i) => { card[k][c] = pk[i]; });
+const studio = {
+  phase: "idle",
+  roundId: null,
+  roundCode: "—",
+  roundSeq: 0,
+  bettingEndsAt: 0,
+  drawStartedAt: 0,
+  resultEndsAt: 0,
+  order: [],
+  pos: 0,
+  drawn: [],
+  players: [],
+  history: [],
+  chat: [],
+  timers: new Set(),
+  started: false,
+};
+
+/* ---------------- utilities ---------------- */
+
+function shuffle(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return card;
+  return a;
 }
-const cardHas = (card, n) => card.some(r => r.includes(n));
-const best = p => Math.max(...p.marks.map(m => m.size));
-const clean = s => String(s || "").replace(/[<>&"'`\u0000-\u001f]/g, "").trim().slice(0, 16);
-const send = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
-const all = (room, o) => room.players.forEach(p => send(p.ws, o));
+const money = n => Math.round(Number(n) * 100) / 100;
+const clean = s => String(s || "").replace(/[<>&"'`\u0000-\u001f]/g, "").trim().slice(0, 140);
+const send = (ws, o) => { if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify(o)); } catch (e) {} } };
+const each = fn => studio.players.forEach(p => { if (p.ws && p.ws.readyState === 1) fn(p); });
+const broadcast = o => each(p => send(p.ws, o));
+const viewerCount = () => studio.players.filter(p => !p.bot && p.ws && p.ws.readyState === 1).length;
 
-/* ---------- reytinq (fayl) ---------- */
-let LB = {};
-try { LB = JSON.parse(fs.readFileSync(LB_FILE, "utf8")); } catch (e) { LB = {}; }
-let lbTimer = null;
-function saveLB() {
-  clearTimeout(lbTimer);
-  lbTimer = setTimeout(() => {
-    try { fs.mkdirSync(path.dirname(LB_FILE), { recursive: true }); fs.writeFileSync(LB_FILE, JSON.stringify(LB)); } catch (e) { console.error("LB save", e.message); }
-  }, 500);
+function later(fn, ms) {
+  const t = setTimeout(() => { studio.timers.delete(t); try { fn(); } catch (e) { console.error("loto timer", e); } }, ms);
+  studio.timers.add(t);
+  return t;
 }
-function topLB() {
-  return Object.values(LB).sort((a, b) => b.score - a.score).slice(0, 20).map(r => ({ name: r.name, score: r.score, wins: r.wins }));
+function clearTimers() {
+  for (const t of studio.timers) clearTimeout(t);
+  studio.timers.clear();
 }
 
-/* ---------- otaqlar ---------- */
-const rooms = new Map(), byPid = new Map();
+function patternLabel(pattern) {
+  return pattern === "full" ? "TAM KART" : pattern === "two" ? "2 XƏTT" : "1 XƏTT";
+}
 
-function getRoom() {   // hamı üçün açıq: kod yoxdur, gözləyən otağa qoşulur
-  for (const r of rooms.values()) if (r.state === "wait" && r.players.length < MAX_PLAYERS) return r;
-  return newRoom("");
+/* ---------------- serialisation ---------------- */
+
+function serializeTicket(t) {
+  return {
+    id: t.id || null,
+    price: t.price,
+    fundedBy: t.fundedBy || "demo",
+    demo: Boolean(t.demo),
+    grid: t.grid,
+    marked: [...t.marked],
+    awards: t.awards,
+    line: t.line,
+    two: t.two,
+    full: t.full,
+  };
 }
-function newRoom(code) {
-  const r = { id: crypto.randomUUID(), code, state: "wait", players: [], timers: [], order: [], pos: 0, drawn: new Set(), startAt: Date.now() + LOBBY_MS };
-  rooms.set(r.id, r);
-  r.lobbyTick = setInterval(() => lobbyInfo(r), 1000);
-  r.startTimer = setTimeout(() => startGame(r), LOBBY_MS);
-  return r;
+
+function phasePayload() {
+  return {
+    t: "phase",
+    phase: studio.phase,
+    roundCode: studio.roundCode,
+    roundId: studio.roundId,
+    ticketPrice: TICKET_PRICE(),
+    prizes: PRIZES,
+    maxTickets: MAX_TICKETS,
+    bettingEndsAt: studio.bettingEndsAt,
+    drawStartedAt: studio.drawStartedAt,
+    resultEndsAt: studio.resultEndsAt,
+    drawn: studio.drawn.slice(),
+    pos: studio.pos,
+    viewers: viewerCount(),
+    players: studio.players.filter(p => !p.bot).map(p => p.name),
+    history: studio.history.slice(0, 8),
+    serverTime: Date.now(),
+  };
 }
-function lobbyInfo(r) {
-  all(r, { t: "lobby", players: r.players.map(p => p.name), left: Math.max(0, Math.ceil((r.startAt - Date.now()) / 1000)), code: r.code });
+
+function syncPayload(p) {
+  return {
+    ...phasePayload(),
+    t: "sync",
+    pid: p.pid,
+    name: p.name,
+    auth: Boolean(p.userId),
+    tickets: p.tickets.map(serializeTicket),
+    balance: p.balance,
+    bonusBalance: p.bonusBalance,
+    autoBuy: Boolean(p.autoBuy),
+  };
 }
-function addPlayer(r, ws, name, uid) {
-  const p = { pid: crypto.randomUUID(), ws, name, uid, bot: false, cards: [], marks: [], score: 0 };
-  r.players.push(p); byPid.set(p.pid, { r, p });
-  send(ws, { t: "joined", pid: p.pid, code: r.code });
-  if (r.players.length >= MAX_PLAYERS) { clearTimeout(r.startTimer); r.startAt = Date.now() + 3000; r.startTimer = setTimeout(() => startGame(r), 3000); }
-  lobbyInfo(r);
+
+/* ---------------- chat ---------------- */
+
+function addChat(name, text, system = false) {
+  const m = { t: "chat", name, text, system, at: Date.now() };
+  studio.chat.push(m);
+  if (studio.chat.length > CHAT_MAX) studio.chat.shift();
+  return m;
+}
+function broadcastChat(m) { broadcast(m); }
+
+/* ---------------- tickets ---------------- */
+
+function makeTicketRecord({ id = null, numbers, price, fundedBy = "demo", demo = false }) {
+  const grid = gridFromNumbers(numbers);
+  return {
+    id,
+    grid,
+    price: Number(price) || 0,
+    fundedBy,
+    demo,
+    numberSet: new Set(numbers || []),
+    marked: new Set(),
+    awards: [],
+    line: false,
+    two: false,
+    full: false,
+  };
+}
+function botTicket() {
+  const t = makeTicket();
+  return makeTicketRecord({ numbers: t.numbers, price: TICKET_PRICE(), fundedBy: "bot", demo: true });
+}
+
+function resetPlayerTickets(p) {
+  p.tickets = [];
+}
+
+/* ---------------- DB round ---------------- */
+
+async function openDbRound() {
+  studio.roundId = null;
+  studio.roundCode = `REDX-LIVE-${Date.now().toString().slice(-6)}`;
+  if (!database.enabled) return;
+  try {
+    let round = await database.openLotoRound(TICKET_PRICE(), Math.round(BETTING_MS() / 1000));
+    if (round && round.created_at && new Date(round.created_at).getTime() < BOOT_AT - 5000) {
+      await database.closeLotoRound(round.id, []);
+      round = await database.openLotoRound(TICKET_PRICE(), Math.round(BETTING_MS() / 1000));
+    }
+    if (round) { studio.roundId = round.id; studio.roundCode = round.round_code; }
+  } catch (e) {
+    console.error("loto open round", e.message);
+  }
+}
+
+/* ---------------- phase control ---------------- */
+
+async function startIdle() {
+  clearTimers();
+  studio.phase = "idle";
+  studio.roundId = null;
+  studio.roundCode = "—";
+  studio.bettingEndsAt = 0;
+  studio.drawStartedAt = 0;
+  studio.resultEndsAt = 0;
+  studio.drawn = [];
+  studio.pos = 0;
+  studio.players = studio.players.filter(p => !p.bot && p.ws && p.ws.readyState === 1);
+  studio.players.forEach(resetPlayerTickets);
+  broadcast(phasePayload());
+  broadcastChat(addChat("REDX Studio", "Studio hazırdır. Oyunçu gözlənilir.", true));
+}
+
+async function startBetting() {
+  if (studio.phase === "betting" || studio.phase === "drawing") return;
+  clearTimers();
+  studio.phase = "betting";
+  studio.roundSeq++;
+  studio.drawn = [];
+  studio.pos = 0;
+  studio.order = shuffle(Array.from({ length: 90 }, (_, i) => i + 1));
+  studio.bettingEndsAt = Date.now() + BETTING_MS();
+  studio.drawStartedAt = 0;
+  studio.resultEndsAt = 0;
+  studio.players = studio.players.filter(p => !p.bot && p.ws && p.ws.readyState === 1);
+  studio.players.forEach(resetPlayerTickets);
+  await openDbRound();
+  broadcast(phasePayload());
+  broadcastChat(addChat("REDX Studio", "Yeni raund başladı. Biletlərinizi alın!", true));
+  later(beginDraw, BETTING_MS());
+  // players queued for the next round
+  later(async () => {
+    for (const p of studio.players.slice()) {
+      if (p.autoBuy && !p.bot && p.ws && p.ws.readyState === 1) {
+        p.autoBuy = false;
+        send(p.ws, { t: "tickets", tickets: p.tickets.map(serializeTicket), balance: p.balance, bonusBalance: p.bonusBalance, autoBuy: false });
+        await purchaseTicket(p, false);
+      }
+    }
+  }, 600);
+}
+
+function beginDraw() {
+  if (studio.phase !== "betting") return;
+  clearTimers();
+  studio.phase = "drawing";
+  studio.drawStartedAt = Date.now();
+
+  // fill the table with demo players so the studio always feels alive
+  const target = Math.min(5, Math.max(3, studio.players.length + 2));
+  const used = new Set(studio.players.map(p => p.name));
+  const names = shuffle(BOT_NAMES.filter(n => !used.has(n)));
+  while (studio.players.length < target) {
+    const name = names.pop() || `Demo ${Math.floor(Math.random() * 900 + 100)}`;
+    const bot = {
+      pid: "bot-" + crypto.randomUUID(),
+      ws: null,
+      name,
+      bot: true,
+      userId: null,
+      tickets: [botTicket()],
+      balance: null,
+      bonusBalance: null,
+      autoBuy: false,
+    };
+    studio.players.push(bot);
+  }
+  studio.players.filter(p => p.bot).forEach(p => { if (!p.tickets.length) p.tickets = [botTicket()]; });
+
+  broadcast(phasePayload());
+  broadcastChat(addChat("REDX Studio", "Çəkiliş başlayır. Uğurlar!", true));
+  later(drawNext, 1600);
+}
+
+async function drawNext() {
+  if (studio.phase !== "drawing") return;
+  if (studio.pos >= 90) return endRound("drawn");
+
+  const n = studio.order[studio.pos++];
+  studio.drawn.push(n);
+  broadcast({ t: "ball", n, index: studio.pos, drawn: studio.drawn.slice(), serverTime: Date.now() });
+
+  const awards = [];
+  let anyFull = false;
+
+  for (const p of studio.players) {
+    for (const t of p.tickets) {
+      if (t.numberSet.has(n)) t.marked.add(n);
+      const st = ticketState(t.grid, t.marked);
+      if (st.line && !t.line) { t.line = true; awards.push({ p, t, pattern: "line", amount: money(t.price * PRIZES.line) }); }
+      if (st.two && !t.two) { t.two = true; awards.push({ p, t, pattern: "two", amount: money(t.price * PRIZES.two) }); }
+      if (st.full && !t.full) { t.full = true; awards.push({ p, t, pattern: "full", amount: money(t.price * PRIZES.full) }); anyFull = true; }
+    }
+  }
+
+  for (const a of awards) {
+    const { p, t, pattern, amount } = a;
+    t.awards.push({ pattern, amount });
+    if (!p.bot && amount > 0 && studio.roundId && t.id && !t.demo) {
+      try {
+        const res = await database.creditLotoWin({
+          userId: p.userId,
+          roundId: studio.roundId,
+          ticketId: t.id,
+          pattern,
+          amount,
+          fundedBy: t.fundedBy,
+        });
+        if (Number.isFinite(res.balance)) p.balance = res.balance;
+        if (Number.isFinite(res.bonusBalance)) p.bonusBalance = res.bonusBalance;
+        send(p.ws, { t: "award", ticketId: t.id, pattern, amount, label: patternLabel(pattern), balance: p.balance, bonusBalance: p.bonusBalance });
+      } catch (e) {
+        console.error("loto payout", e.message);
+        send(p.ws, { t: "award", ticketId: t.id, pattern, amount, label: patternLabel(pattern), error: true });
+      }
+    } else if (!p.bot) {
+      send(p.ws, { t: "award", ticketId: t.id, pattern, amount, label: patternLabel(pattern), balance: p.balance, bonusBalance: p.bonusBalance });
+    }
+    const who = p.bot ? `${p.name} (demo)` : p.name;
+    const prize = amount > 0 ? ` · ₼${amount.toFixed(2)}` : "";
+    broadcastChat(addChat("REDX Studio", `${who} ${patternLabel(pattern)} tamamladı${prize}`, true));
+  }
+
+  broadcast({
+    t: "marks",
+    drawn: studio.drawn.slice(),
+    awards: awards.filter(a => !a.p.bot).map(a => ({ ticketId: a.t.id, pattern: a.pattern, amount: a.amount })),
+    serverTime: Date.now(),
+  });
+
+  if (anyFull) {
+    later(() => endRound("full"), 1800);
+    return;
+  }
+  later(drawNext, BALL_MS());
+}
+
+async function endRound(reason) {
+  if (studio.phase !== "drawing") return;
+  clearTimers();
+  studio.phase = "result";
+  studio.resultEndsAt = Date.now() + RESULT_MS();
+
+  const winners = [];
+  const seen = new Set();
+  for (const p of studio.players) {
+    const won = p.tickets.filter(t => t.awards.length);
+    if (!won.length) continue;
+    const key = p.bot ? "bot:" + p.name : "user:" + (p.userId || p.pid);
+    if (!seen.has(key)) {
+      seen.add(key);
+      winners.push({ name: p.name, bot: Boolean(p.bot), tickets: won.map(t => ({ id: t.id, awards: t.awards })) });
+    }
+  }
+  const winnerNames = winners.map(w => w.bot ? `${w.name} (demo)` : w.name);
+
+  if (studio.roundId) {
+    try {
+      const winIds = studio.players.filter(p => !p.bot).flatMap(p => p.tickets.filter(t => t.awards.length && t.id).map(t => t.id));
+      await database.closeLotoTickets(studio.roundId, winIds);
+      await database.closeLotoRound(studio.roundId, studio.drawn.slice());
+    } catch (e) {
+      console.error("loto close round", e.message);
+    }
+  }
+
+  studio.history.unshift({
+    code: studio.roundCode,
+    drawn: studio.pos,
+    numbers: studio.drawn.slice(-10),
+    winners: winnerNames,
+    at: Date.now(),
+  });
+  if (studio.history.length > 10) studio.history.pop();
+
+  broadcast({
+    t: "end",
+    reason,
+    roundCode: studio.roundCode,
+    drawn: studio.drawn.slice(),
+    winners,
+    nextAt: studio.resultEndsAt,
+    history: studio.history.slice(0, 8),
+    serverTime: Date.now(),
+  });
+  broadcastChat(addChat("REDX Studio", winnerNames.length ? `Raund bitdi. Qalib: ${winnerNames.join(", ")}` : "Raund bitdi. Qalib yoxdur.", true));
+
+  later(() => {
+    if (viewerCount() > 0) startBetting();
+    else startIdle();
+  }, RESULT_MS());
+}
+
+/* ---------------- player actions ---------------- */
+
+function identify(token) {
+  if (!token || !process.env.ADMIN_JWT_SECRET) return null;
+  try {
+    const user = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
+    return { userId: user.id, userCode: user.externalCode, email: user.email };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function purchaseTicket(p, silent = false) {
+  if (studio.phase !== "betting") {
+    if (!silent) send(p.ws, { t: "err", code: "phase", m: "Bilet satışı bağlanıb. Növbəti raundu gözləyin." });
+    return false;
+  }
+  if (p.tickets.length >= MAX_TICKETS) {
+    if (!silent) send(p.ws, { t: "err", code: "limit", m: `Hər raundda maksimum ${MAX_TICKETS} bilet.` });
+    return false;
+  }
+  if (p.buying) {
+    if (!silent) send(p.ws, { t: "err", code: "busy", m: "Bilet alınır. Bir az gözləyin." });
+    return false;
+  }
+
+  p.buying = true;
+  try {
+    return await deliverTicket(p, silent);
+  } finally {
+    p.buying = false;
+  }
+}
+
+async function deliverTicket(p, silent) {
+  const card = makeTicket();
+  const price = TICKET_PRICE();
+
+  if (database.enabled && p.userId && studio.roundId) {
+    try {
+      const result = await database.buyLotoTicket(p.userId, p.userCode, studio.roundId, card.numbers, price);
+      if (result.insufficient) {
+        if (!silent) send(p.ws, { t: "err", code: "insufficient", m: "Balans və bonus kifayət etmir.", balance: result.balance, bonusBalance: result.bonusBalance });
+        return false;
+      }
+      p.balance = result.balance;
+      p.bonusBalance = result.bonusBalance;
+      const ticket = makeTicketRecord({
+        id: result.ticket.id,
+        numbers: result.ticket.numbers,
+        price: Number(result.ticket.ticket_price),
+        fundedBy: result.fundedBy,
+      });
+      p.tickets.push(ticket);
+      send(p.ws, { t: "tickets", tickets: p.tickets.map(serializeTicket), balance: p.balance, bonusBalance: p.bonusBalance, autoBuy: Boolean(p.autoBuy) });
+      send(p.ws, { t: "balance", balance: p.balance, bonusBalance: p.bonusBalance });
+      broadcastChat(addChat("REDX Studio", `${p.name} bilet aldı.`, true));
+      return true;
+    } catch (e) {
+      console.error("loto buy", e.message);
+      if (!silent) send(p.ws, { t: "err", code: "db", m: "Bilet alınmadı. Yenidən cəhd edin." });
+      return false;
+    }
+  }
+
+  // database unavailable: free practice ticket
+  const ticket = makeTicketRecord({ numbers: card.numbers, price: 0, fundedBy: "demo", demo: true });
+  p.tickets.push(ticket);
+  send(p.ws, { t: "tickets", tickets: p.tickets.map(serializeTicket), balance: p.balance, bonusBalance: p.bonusBalance, autoBuy: Boolean(p.autoBuy), demo: true });
+  broadcastChat(addChat("REDX Studio", `${p.name} demo bilet aldı.`, true));
+  return true;
+}
+
+/* ---------------- connection handling ---------------- */
+
+function addPlayer(ws, name, auth) {
+  let finalName = clean(name) || (auth?.email ? String(auth.email).split("@")[0] : `Qonaq${Math.floor(Math.random() * 900 + 100)}`);
+  const used = new Set(studio.players.map(p => p.name.toLowerCase()));
+  let base = finalName.slice(0, 16);
+  let i = 2;
+  while (used.has(finalName.toLowerCase())) { finalName = `${base}${i++}`; }
+  const p = {
+    pid: crypto.randomUUID(),
+    ws,
+    name: finalName,
+    bot: false,
+    userId: auth?.userId || null,
+    userCode: auth?.userCode || null,
+    tickets: [],
+    balance: null,
+    bonusBalance: null,
+    autoBuy: false,
+    buying: false,
+    lastChat: 0,
+  };
+  studio.players.push(p);
+  ws.player = p;
   return p;
 }
-function startGame(r) {
-  if (r.state !== "wait") return;
-  clearInterval(r.lobbyTick); clearTimeout(r.startTimer);
-  const humans = r.players.filter(p => !p.bot).length;
-  {
-    const names = shuffle(BOT_NAMES.filter(n => !r.players.some(p => p.name === n)));
-    while (r.players.length < MIN_TOTAL) r.players.push({ pid: crypto.randomUUID(), ws: null, name: names.pop(), bot: true, cards: [], marks: [], score: 0 });
+
+function attachExisting(ws, p) {
+  if (p.ws && p.ws !== ws && p.ws.readyState === 1) send(p.ws, { t: "err", code: "replaced", m: "Başqa pəncərədə qoşuldu." });
+  p.ws = ws;
+  ws.player = p;
+}
+
+function joinedPayload(p) {
+  return {
+    t: "joined",
+    pid: p.pid,
+    name: p.name,
+    auth: Boolean(p.userId),
+    balance: p.balance,
+    bonusBalance: p.bonusBalance,
+    tickets: p.tickets.map(serializeTicket),
+    autoBuy: Boolean(p.autoBuy),
+    serverTime: Date.now(),
+  };
+}
+
+async function hydratePlayer(p) {
+  if (!database.enabled || !p.userId) return;
+  try {
+    const r = await database.query("SELECT balance, bonus_balance FROM users WHERE id=$1", [p.userId]);
+    if (!r.rowCount) return;
+    p.balance = Number(r.rows[0].balance);
+    p.bonusBalance = Number(r.rows[0].bonus_balance);
+    send(p.ws, { t: "balance", balance: p.balance, bonusBalance: p.bonusBalance });
+  } catch (e) {
+    console.error("loto balance", e.message);
   }
-  r.players.forEach(p => { p.cards = [mkCard(), mkCard()]; p.marks = [new Set(), new Set()]; });
-  r.order = shuffle(Array.from({ length: 90 }, (_, i) => i + 1));
-  r.state = "play"; r.t0 = Date.now();
-  const names = r.players.map(p => p.name);
-  r.players.forEach((p, i) => send(p.ws, { t: "start", you: i, players: names, cards: p.cards, interval: INTERVAL }));
-  r.tickTimer = setTimeout(function loop() {
-    if (r.state !== "play") return;
-    tick(r);
-    r.tickTimer = setTimeout(loop, INTERVAL);
-  }, 2500);
 }
-function progress(r) { all(r, { t: "prog", c: r.players.map(best) }); }
-function tick(r) {
-  if (r.pos >= 90) return endGame(r, -1);
-  const n = r.order[r.pos++]; r.drawn.add(n);
-  all(r, { t: "ball", n, i: r.pos });
-  r.players.forEach((p, idx) => {
-    if (!p.bot) return;
-    setTimeout(() => {   // kompüter oyunçu insan kimi bir az gecikir
-      if (r.state !== "play") return;
-      p.cards.forEach((c, ci) => { if (cardHas(c, n)) p.marks[ci].add(n); });
-      if (p.marks.some(m => m.size === 15)) return endGame(r, idx);
-      progress(r);
-    }, 900 + rnd(2400));
-  });
+
+function handleClose(ws) {
+  const p = ws.player;
+  if (!p) return;
+  p.ws = null;
+  p.autoBuy = false;
+  broadcast({ t: "viewers", count: viewerCount() });
+  broadcast(phasePayload());
+  if (studio.phase === "betting" && !p.tickets.length) {
+    later(() => {
+      if (!p.ws && !p.tickets.length) {
+        studio.players = studio.players.filter(x => x !== p);
+        broadcast(phasePayload());
+      }
+    }, 45000);
+  }
 }
-function mark(r, p, c, n) {
-  if (r.state !== "play" || !Number.isInteger(c) || c < 0 || c > 1 || !Number.isInteger(n)) return;
-  if (!cardHas(p.cards[c], n) || p.marks[c].has(n)) return;
-  if (!r.drawn.has(n)) { p.score -= 5; return send(p.ws, { t: "bad", c, n, score: p.score }); }
-  p.marks[c].add(n); p.score += 10;
-  send(p.ws, { t: "marked", c, n, score: p.score });
-  if (p.marks[c].size === 15) return endGame(r, r.players.indexOf(p));
-  progress(r);
-}
-function endGame(r, w) {
-  if (r.state !== "play") return;
-  r.state = "done"; clearTimeout(r.tickTimer);
-  if (w >= 0) r.players[w].score += 100 + Math.max(0, 90 - r.pos) * 2;
-  const scores = r.players.map(p => p.score);
-  all(r, { t: "end", w, name: w >= 0 ? r.players[w].name : "", scores, draws: r.pos, players: r.players.map(p => p.name) });
-  r.players.forEach((p, i) => {
-    if (p.bot) return;
-    const key = p.uid || ("g:" + p.name);
-    const cur = LB[key] || { name: p.name, score: 0, wins: 0 };
-    cur.name = p.name; cur.score = Math.max(cur.score, p.score); if (i === w) cur.wins++;
-    LB[key] = cur;
-    if (RESULT_URL) {
-      fetch(RESULT_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + API_KEY },
-        body: JSON.stringify({ userId: p.uid || null, name: p.name, outcome: i === w ? "win" : "lose", score: p.score, draws: r.pos, gameId: r.id, durationMs: Date.now() - r.t0 }) }).catch(() => {});
+
+function handleJoin(ws, m) {
+  if (ws.player) return;
+
+  // reconnect with the same pid
+  if (m.pid) {
+    const existing = studio.players.find(p => p.pid === m.pid && !p.bot);
+    if (existing) {
+      attachExisting(ws, existing);
+      send(ws, joinedPayload(existing));
+      send(ws, syncPayload(existing));
+      send(ws, { t: "viewers", count: viewerCount() });
+      broadcastChat(addChat("REDX Studio", `${existing.name} yenidən qoşuldu.`, true));
+      hydratePlayer(existing);
+      return;
     }
-  });
-  saveLB();
-  setTimeout(() => { r.players.forEach(p => byPid.delete(p.pid)); rooms.delete(r.id); }, 60000);
-}
-function leave(ws) {
-  const p = ws.player; if (!p) return;
-  const info = byPid.get(p.pid); if (!info) return;
-  const r = info.r;
-  if (r.state === "wait") {
-    r.players = r.players.filter(x => x !== p); byPid.delete(p.pid);
-    if (!r.players.length) { clearInterval(r.lobbyTick); clearTimeout(r.startTimer); rooms.delete(r.id); } else lobbyInfo(r);
-  } else if (p.ws === ws) p.ws = null;
+  }
+
+  const auth = identify(m.token);
+  const p = addPlayer(ws, m.name, auth);
+  send(ws, { ...phasePayload(), t: "hello", chat: studio.chat.slice(-40) });
+  send(ws, joinedPayload(p));
+  send(ws, syncPayload(p));
+  send(ws, { t: "viewers", count: viewerCount() });
+  broadcastChat(addChat("REDX Studio", `${p.name} studiyaya qoşuldu.`, true));
+  hydratePlayer(p);
+
+  if (studio.phase === "idle" && viewerCount() > 0) startBetting();
 }
 
-/* ---------- giriş (token yoxlaması) ---------- */
-async function identify(token, name) {
-  if (!VERIFY_URL) return { uid: null, name: clean(name) || "Qonaq" + (100 + rnd(900)) };
-  const res = await fetch(VERIFY_URL, { headers: { Authorization: "Bearer " + token } });
-  if (!res.ok) throw new Error("auth");
-  const u = await res.json();
-  return { uid: String(u.id), name: clean(u.name) || "Oyunçu" };
+function handleMessage(ws, raw) {
+  let m;
+  try { m = JSON.parse(raw); } catch (e) { return; }
+  if (!m || typeof m.t !== "string") return;
+
+  if (m.t === "join") return handleJoin(ws, m);
+  if (m.t === "ping") { send(ws, { t: "pong", now: Date.now() }); return; }
+
+  const p = ws.player;
+  if (!p) return;
+
+  if (m.t === "buy") {
+    if (!p.userId) return send(ws, { t: "err", code: "auth", m: "Bilet almaq üçün hesabına daxil ol." });
+    if (studio.phase === "idle") {
+      p.autoBuy = true;
+      send(ws, { t: "queued", m: "Növbəti raunda bilet növbəyə alındı." });
+      startBetting();
+      return;
+    }
+    if (studio.phase !== "betting") {
+      p.autoBuy = true;
+      send(ws, { t: "queued", m: "Növbəti raunda bilet növbəyə alındı." });
+      return;
+    }
+    purchaseTicket(p);
+    return;
+  }
+
+  if (m.t === "chat") {
+    if (!p.userId) return send(ws, { t: "err", code: "auth", m: "Çat üçün hesabına daxil ol." });
+    const now = Date.now();
+    if (now - p.lastChat < 900) return;
+    const text = clean(m.text);
+    if (!text) return;
+    p.lastChat = now;
+    broadcastChat(addChat(p.name, text, false));
+    return;
+  }
+
+  if (m.t === "leave") {
+    handleClose(ws);
+    return;
+  }
 }
 
-/* ---------- HTTP + WebSocket ---------- */
+/* ---------------- attach ---------------- */
 
 function attachLoto(wss) {
-wss.on("connection", ws => {
-  ws.alive = true; ws.msgs = 0;
-  ws.on("pong", () => { ws.alive = true; });
-  ws.on("close", () => leave(ws));
-  ws.on("error", () => {});
-  ws.on("message", async raw => {
-    if (++ws.msgs > 30) return;
-    let m; try { m = JSON.parse(raw); } catch (e) { return; }
-    if (!m || typeof m.t !== "string") return;
-    try {
-      if (m.t === "join") {
-        if (ws.player) return;
-        const old = m.pid && byPid.get(m.pid);                       // yenidən qoşulma
-        if (old && old.r.state === "play") {
-          old.p.ws = ws; ws.player = old.p;
-          const r = old.r, i = r.players.indexOf(old.p);
-          send(ws, { t: "joined", pid: old.p.pid, code: r.code });
-          send(ws, { t: "start", you: i, players: r.players.map(p => p.name), cards: old.p.cards, interval: INTERVAL });
-          send(ws, { t: "sync", drawn: r.order.slice(0, r.pos), marks: old.p.marks.map(s => [...s]), score: old.p.score });
-          return progress(r);
-        }
-        const id = await identify(m.token, m.name);
-        const code = String(m.room || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-        const r = getRoom();
-        if (!r) return send(ws, { t: "err", m: "Otaq doludur və ya oyun artıq başlayıb" });
-        if (ws.player) return;
-        ws.player = addPlayer(r, ws, id.name, id.uid);
-      } else if (m.t === "mark" && ws.player) {
-        const info = byPid.get(ws.player.pid);
-        if (info) mark(info.r, ws.player, m.c, m.n);
-      }
-    } catch (e) { send(ws, { t: "err", m: "Giriş alınmadı" }); }
+  wss.on("connection", ws => {
+    ws.isAlive = true;
+    ws.msgCount = 0;
+    ws.on("pong", () => { ws.isAlive = true; });
+    ws.on("close", () => handleClose(ws));
+    ws.on("error", () => {});
+    ws.on("message", raw => {
+      if (++ws.msgCount > 40) return;
+      try { handleMessage(ws, raw); } catch (e) { console.error("loto message", e); }
+    });
+    send(ws, { ...phasePayload(), t: "hello", chat: studio.chat.slice(-40) });
   });
-});
-setInterval(() => wss.clients.forEach(ws => { ws.msgs = 0; }), 1000);
-setInterval(() => wss.clients.forEach(ws => { if (!ws.alive) return ws.terminate(); ws.alive = false; ws.ping(); }), 30000);
+
+  setInterval(() => {
+    wss.clients.forEach(ws => {
+      if (!ws.isAlive) return ws.terminate();
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+  setInterval(() => { wss.clients.forEach(ws => { ws.msgCount = 0; }); }, 1000);
+
+  if (!studio.started) {
+    studio.started = true;
+    startIdle();
+  }
 }
-module.exports = { attachLoto };
+
+module.exports = { attachLoto, __studio: studio };

@@ -251,6 +251,12 @@ function openAuth(mode) {
   modal.classList.add('open');
 }
 
+const authParams = new URLSearchParams(location.search);
+const authNext = authParams.get('next') || '';
+if (authParams.get('login') === '1' && !localStorage.getItem('redx_user')) {
+  setTimeout(() => openAuth('login'), 150);
+}
+
 $('#openLogin').onclick = () => openAuth('login');
 $('#openRegister').onclick = () => openAuth('register');
 $$('[data-auth="register"]').forEach(b => { b.onclick = e => { e.preventDefault(); openAuth('register'); }; });
@@ -351,6 +357,10 @@ $('#authForm').onsubmit = async e => {
     if (d.user) localStorage.setItem('redx_user', JSON.stringify(d.user));
     refreshAccountChip();
     modal.classList.remove('open');
+    if (authNext && authNext.startsWith('/') && !authNext.startsWith('//')) {
+      location.assign(authNext);
+      return;
+    }
     const name = String(d.user?.email || $('#authEmail').value).split('@')[0];
     showToast(state.auth === 'register' ? `Xoş gəldin, ${name}!` : 'Yenidən xoş gəldin!');
   } catch {

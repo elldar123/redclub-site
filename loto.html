@@ -1,228 +1,221 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="az">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Loto Onlayn</title>
-<style>
-:root{--brand:#c8102e;--brand-d:#7d0a1c;--gold:#e2b04a;--gold-l:#fff0bd;--ink:#1c0a0a}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0}
-body{min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:#f6e6c0;
-background:repeating-linear-gradient(45deg,#ffffff07 0 2px,#0000 2px 12px),radial-gradient(ellipse at 50% -10%,#9a1124 0,#520712 45%,#1a0206 100%) fixed}
-.app{max-width:480px;margin:0 auto;padding:8px 8px 24px}
-.brand{text-align:center;font:700 22px Georgia,serif;letter-spacing:.38em;margin:2px 0 8px;padding-left:.38em;
-background:linear-gradient(#fff6d0,#e2b04a 55%,#a9741b);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 3px #000a)}
-.bar{display:flex;justify-content:space-between;align-items:flex-start}
-.grp{display:flex;gap:6px;width:98px}.grp.r{justify-content:flex-end}
-.wb{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--gold);background:radial-gradient(circle at 35% 25%,#8c1426,#3a0610);color:var(--gold-l);font-size:19px;cursor:pointer;padding:0;box-shadow:0 3px 8px #000a,inset 0 1px 0 #ffffff30}
-.wb:active{transform:translateY(2px)}
-.keg{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--brand-d);font:bold 44px Georgia,serif;
-background:radial-gradient(circle closest-side,#fffaf0 0 54%,#f0cf7a 57% 76%,#b07d1c 88%,#4a2f08 97%,transparent 100%);filter:drop-shadow(0 6px 8px #000c)}
-.keg.pop{animation:pop .45s}
-@keyframes pop{0%{transform:translateY(-34px) scale(.5) rotate(-30deg);opacity:.2}70%{transform:scale(1.1)}100%{transform:none;opacity:1}}
-.last{display:flex;gap:8px;justify-content:center;margin:10px 0 4px;min-height:36px}
-.last i{width:36px;height:36px;border-radius:50%;font:bold 14px Georgia;font-style:normal;color:var(--brand-d);display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 30%,var(--gold-l),#d9a93f);border:2px solid #8a5f12;box-shadow:0 2px 4px #000a}
-.info{text-align:center;font-size:13px;color:#e9d3a0;min-height:18px;letter-spacing:.03em}
-.msg{text-align:center;font:bold 18px Georgia,serif;min-height:26px;color:var(--gold-l);text-shadow:0 2px 4px #000a;margin-bottom:4px}
-.av{display:flex;gap:8px;overflow-x:auto;margin:6px 0 10px;padding:6px 4px 2px;scrollbar-width:none}
-.av div{flex:0 0 58px;text-align:center;font-size:11px;color:#e9d3a0;min-width:0}
-.av b{display:flex;align-items:center;justify-content:center;position:relative;width:50px;height:50px;margin:0 auto 3px;border-radius:50%;font:bold 22px Georgia;color:#fff;border:2px solid #c9a24a;box-shadow:0 3px 6px #000a}
-.av b.me{border-color:var(--gold-l);box-shadow:0 0 0 2px var(--gold),0 0 14px #e2b04a99}
-.av em{position:absolute;right:-6px;top:-6px;background:var(--brand);color:#fff;border-radius:9px;font:bold 11px Arial;font-style:normal;padding:1px 6px;border:1px solid var(--gold)}
-.av span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card{position:relative;background:#fffdf8;border:3px solid var(--brand);border-radius:6px;margin-bottom:16px;padding-bottom:12px;overflow:hidden;
-box-shadow:0 0 0 2px var(--gold),0 12px 26px #000b}
-.card::before{content:"★  L O T O  ★";display:block;background:linear-gradient(#e0243c,#9a0c1e);color:var(--gold-l);text-align:center;font:bold 12px Georgia,serif;letter-spacing:.35em;padding:5px 0;border-bottom:2px solid var(--gold)}
-.grid{display:grid;grid-template-columns:repeat(9,1fr);gap:1px;background:#d9a9a9}
-.c{aspect-ratio:1/.95;background:#fffdf8;color:var(--ink);display:flex;align-items:center;justify-content:center;position:relative;user-select:none;font:600 clamp(20px,6.6vw,31px) Georgia,serif}
-.c:not(.n){background:repeating-linear-gradient(45deg,#fbeceb 0 3px,#fffdf8 3px 6px)}
-.c.n{cursor:pointer}.c.m{color:transparent}
-.c.m::after{content:"";position:absolute;inset:7%;border-radius:50%;background:radial-gradient(circle at 36% 28%,#ff9a8c,#d4141f 52%,#7d0a12);box-shadow:0 0 0 2px var(--gold),0 3px 5px #000a,inset 0 -3px 5px #0005}
-.c.bad{animation:sh .3s;background:#ffd0cb}
-@keyframes sh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-.tag{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);font:10px Georgia;color:#a07a7a;letter-spacing:.2em}
-.net{text-align:center;font-size:12px;margin-top:8px;color:#e9d3a0}
-.ov{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:5;padding:16px}
-.ov[hidden]{display:none}
-.panel{width:100%;max-width:370px;border-radius:16px;border:1.5px solid var(--gold);background:linear-gradient(#5e0b18,#27040a);color:#f6e6c0;padding:22px 18px;text-align:center;box-shadow:0 0 40px #c8102e66,0 14px 40px #000}
-.panel h2{margin:0 0 6px;font:700 28px Georgia,serif;letter-spacing:.3em;padding-left:.3em;background:linear-gradient(#fff6d0,#e2b04a 55%,#a9741b);-webkit-background-clip:text;background-clip:text;color:transparent}
-.panel p{margin:8px 0;font-size:14px}
-.panel input{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid var(--gold);background:#1a0307;color:var(--gold-l);font:16px Arial}
-.panel input::placeholder{color:#a58a64}
-.panel button,dialog button{padding:12px 22px;border-radius:10px;border:1px solid var(--gold);background:linear-gradient(#e0243c,#a30f22);color:#fff;font:bold 16px Georgia,serif;letter-spacing:.05em;cursor:pointer;margin-top:8px;box-shadow:0 4px 12px #000a}
-.plist{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0;max-height:120px;overflow:auto}
-.plist span{background:#1a0307;border:1px solid #c9a24a;border-radius:14px;padding:3px 11px;font-size:13px}
-#cd{font:bold 40px Georgia,serif;color:var(--gold-l);margin:4px 0}
-.age{display:flex;gap:8px;align-items:center;justify-content:center;font-size:13px;margin:6px 0;color:#e9d3a0}
-.age input{width:auto;margin:0}
-dialog{border:1.5px solid var(--gold);border-radius:16px;background:linear-gradient(#5e0b18,#27040a);color:#f6e6c0;max-width:380px;width:90%;text-align:center}
-dialog::backdrop{background:#000b}dialog ol{text-align:left;padding-left:22px;font-size:14px}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07060a">
+  <meta name="description" content="REDX Live Loto — canlı studiya, 90 top, real vaxtlı biletlər.">
+  <title>REDX Live Loto — Canlı studiya</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2307060a'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='42' font-weight='700' text-anchor='middle' fill='%23f4c15d'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Cinzel:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="loto-live.css?v=1">
 </head>
 <body>
-<div class="app">
-<div class="brand" id="brand">RED LOTO</div>
-<div class="bar">
-<div class="grp"><button class="wb" id="snd" aria-label="Səs">🔊</button><button class="wb" id="lb" aria-label="Reytinq">🏆</button></div>
-<div class="keg" id="keg">?</div>
-<div class="grp r"><button class="wb" id="home" aria-label="Çıx">🚪</button></div>
-</div>
-<div class="last" id="last"></div>
-<div class="info" id="info"></div>
-<div class="msg" id="msg" aria-live="polite"></div>
-<div class="av" id="av"></div>
-<div id="cards"></div>
-<div class="net" id="net"></div>
-</div>
+  <div class="loto-app">
+    <header class="loto-top">
+      <a class="loto-brand" href="/" aria-label="REDX ana səhifə"><i>R</i>EDX<span>LIVE</span></a>
+      <div class="live-chip"><b></b> CANLI</div>
+      <div class="round-meta">
+        <span>RAUND</span>
+        <strong id="roundCode">—</strong>
+      </div>
+      <div class="top-right">
+        <div class="balance-chip" id="balanceChip" title="Balans">
+          <small>BALANS</small>
+          <b id="balanceValue">₼0.00</b>
+          <em id="bonusValue">bonus ₼0.00</em>
+        </div>
+        <button class="icon-btn" id="soundBtn" type="button" aria-label="Səs">🔊</button>
+        <button class="icon-btn" id="fullBtn" type="button" aria-label="Tam ekran">⛶</button>
+        <button class="icon-btn" id="rulesBtn" type="button" aria-label="Qaydalar">?</button>
+        <a class="exit-btn" href="/">Çıxış</a>
+      </div>
+    </header>
 
-<div class="ov" id="lobby">
-<div class="panel">
-<h2 id="brand2">RED LOTO</h2>
-<div id="form">
-<p>Canlı oyunçularla onlayn loto. Adınızı yazın və daxil olun.</p>
-<input id="nm" maxlength="16" placeholder="Adınız" autocomplete="nickname">
-<label class="age"><input type="checkbox" id="ad"> 18 yaşım tamamdır</label>
-<button id="go">Daxil ol və oyuna qoşul</button>
-</div>
-<div id="wait" hidden>
-<p id="lt">Oyunçular toplanır. Oyun geri sayım bitəndə başlayır.</p>
-<div class="plist" id="pl"></div>
-<p id="cd" style="font-size:22px;font-weight:bold"></p>
-<p style="font-size:12px">Oyunçu sayı azdırsa, kompüter oyunçular qoşulacaq.</p>
-</div>
-<p id="err" style="color:#a82a1a;font-size:13px;min-height:16px"></p>
-</div>
-</div>
-<dialog id="dlg"><h2 id="dt"></h2><div id="db"></div><p><button id="dc">Bağla</button></p></dialog>
+    <main class="studio-grid">
+      <section class="stage-card" aria-label="Canlı loto studiyası">
+        <div class="stage-top">
+          <div class="onair"><b></b> ON AIR · REDX STUDIO 01</div>
+          <div class="studio-clock" id="studioClock">--:--:--</div>
+          <div class="viewers"><span>◉</span> <b id="viewerCount">0</b> oyunçu</div>
+        </div>
 
-<script>
-/* ===== KONFİQURASİYA (hamısı ixtiyaridir) =====
- window.LOTO_CONFIG = {ws:"wss://sizin-sayt.az", brand:"RED LOTO", player:"Aysel"}
- Serveriniz eyni ünvandan işləyirsə heç nə yazmaq lazım deyil.
- DİQQƏT: gizli API açarı burada olmamalıdır, o yalnız serverin mühit dəyişənində saxlanır. */
-var CFG=Object.assign({ws:"",token:localStorage.getItem("redx_token")||"",player:"",brand:""},window.LOTO_CONFIG||{});
-function $(i){return document.getElementById(i)}
-var AC=null,mute=false;
-function beep(f,d,ty){if(mute)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=ty||"sine";o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
-var COLS=["#d9822b","#c0392b","#2a7fb8","#3a9a5b","#8e5ab0","#c2527a"];
-var WS=null,S=null,pid="",joinOpts={},closing=false;
-try{pid=sessionStorage.getItem("loto_pid")||""}catch(e){}
-function wsUrl(){return CFG.ws||((location.protocol==="https:"?"wss://":"ws://")+location.host)}
-function httpBase(){return wsUrl().replace(/^ws/,"http")}
-function cnt(m){return Object.keys(m).length}
-function best(i){return S.counts[i]||0}
+        <div class="stage-scene" id="stageScene">
+          <div class="curtain"></div>
+          <div class="beam beam-a"></div>
+          <div class="beam beam-b"></div>
+          <div class="studio-sign">REDX <em>LIVE</em></div>
 
-function connect(){
-  closing=false;$("err").textContent="";
-  WS=new WebSocket(wsUrl());
-  WS.onopen=function(){WS.send(JSON.stringify({t:"join",name:joinOpts.name,room:joinOpts.room,token:CFG.token,pid:pid}))};
-  WS.onmessage=function(e){var m;try{m=JSON.parse(e.data)}catch(x){return}on(m)};
-  WS.onclose=function(){
-    if(closing)return;
-    if(S&&!S.over){$("net").textContent="Əlaqə kəsildi, yenidən qoşulur...";setTimeout(connect,2000)}
-    else{showForm("Serverlə əlaqə yoxdur");}
-  };
-}
-function showForm(err){$("lobby").hidden=false;$("form").hidden=false;$("wait").hidden=true;$("err").textContent=err||""}
-function on(m){
-  if(m.t==="joined"){pid=m.pid;try{sessionStorage.setItem("loto_pid",pid)}catch(e){}$("form").hidden=true;$("wait").hidden=false}
-  else if(m.t==="lobby"){
-    $("lt").textContent="Oyunçular: "+m.players.length+" · oyun geri sayım bitəndə başlayır";
-    var pl=$("pl");pl.innerHTML="";m.players.forEach(function(n){var s=document.createElement("span");s.textContent=n;pl.appendChild(s)});
-    var mm=Math.floor(m.left/60),ss=m.left%60;$("cd").textContent=mm+":"+(ss<10?"0":"")+ss;
-  }
-  else if(m.t==="start"){
-    S={cards:m.cards,marks:[{},{},{}],players:m.players,you:m.you,counts:m.players.map(function(){return 0}),drawn:{},hist:[],score:0,over:false,pos:0,interval:m.interval,nextAt:Date.now()+2500};
-    $("lobby").hidden=true;$("msg").textContent="";$("net").textContent="";$("keg").textContent="?";refresh();
-  }
-  else if(m.t==="sync"&&S){
-    m.drawn.forEach(function(n){S.drawn[n]=1});S.hist=m.drawn.slice();S.pos=m.drawn.length;S.score=m.score;
-    m.marks.forEach(function(a,ci){a.forEach(function(n){S.marks[ci][n]=1})});
-    if(m.drawn.length)$("keg").textContent=m.drawn[m.drawn.length-1];$("net").textContent="";refresh();
-  }
-  else if(m.t==="ball"&&S){
-    S.drawn[m.n]=1;S.hist.push(m.n);S.pos=m.i;S.nextAt=Date.now()+S.interval;
-    var k=$("keg");k.textContent=m.n;k.classList.remove("pop");void k.offsetWidth;k.classList.add("pop");beep(520,.2);refresh();
-  }
-  else if(m.t==="marked"&&S){S.marks[m.c][m.n]=1;S.score=m.score;beep(760,.12);refresh()}
-  else if(m.t==="bad"&&S){
-    S.score=m.score;beep(200,.25,"square");info();
-    var el=document.querySelector('[data-k="'+m.c+":"+m.n+'"]');
-    if(el){el.classList.remove("bad");void el.offsetWidth;el.classList.add("bad")}
-  }
-  else if(m.t==="prog"&&S){S.counts=m.c;avatars()}
-  else if(m.t==="end"&&S){
-    S.over=true;S.scores=m.scores;refresh();
-    var win=m.w===S.you,t=m.w<0?"Heç kim qalib olmadı":(win?"Təbriklər, qalib oldunuz!":m.name+" qalib gəldi");
-    $("msg").textContent=t;beep(win?880:240,.5,"triangle");
-    var rows=m.players.map(function(n,i){return{n:n,s:m.scores[i]}}).sort(function(a,b){return b.s-a.s});
-    var h="<ol>"+rows.map(function(r){return"<li>"+esc(r.n)+" — <b>"+r.s+"</b></li>"}).join("")+"</ol>";
-    dlg(t,h+"<button id='again'>Yenidən oyna</button>");
-    $("again").onclick=function(){$("dlg").close();again()};
-  }
-  else if(m.t==="err"){showForm(m.m||"Xəta")}
-}
-function info(){
-  if(!S)return;
-  var s="Xal: "+S.score+"  ·  Bochka: "+S.pos+"/90";
-  if(!S.over&&S.nextAt>Date.now())s+="  ·  Növbəti: "+Math.ceil((S.nextAt-Date.now())/1000)+" san";
-  $("info").textContent=s;
-}
-function avatars(){
-  var av=$("av");av.innerHTML="";
-  S.players.forEach(function(n,i){
-    var d=document.createElement("div"),b=document.createElement("b"),em=document.createElement("em"),sp=document.createElement("span");
-    b.className=i===S.you?"me":"";b.style.background=COLS[i%COLS.length];b.textContent=n.charAt(0).toUpperCase();
-    em.textContent=best(i);b.appendChild(em);sp.textContent=i===S.you?"Siz":n;d.appendChild(b);d.appendChild(sp);av.appendChild(d);
-  });
-}
-function refresh(){
-  var box=$("cards");box.innerHTML="";
-  S.cards.forEach(function(card,ci){
-    var w=document.createElement("div");w.className="card";var g=document.createElement("div");g.className="grid";
-    card.forEach(function(row){for(var c=0;c<9;c++){
-      var v=row[c],d=document.createElement("div");
-      if(!v)d.className="c";
-      else{d.className="c n"+(S.marks[ci][v]?" m":"");d.textContent=v;d.setAttribute("data-k",ci+":"+v);
-        d.onclick=(function(v,ci){return function(){tap(v,ci)}})(v,ci)}
-      g.appendChild(d)}});
-    var t=document.createElement("span");t.className="tag";t.textContent=String(ci+1);
-    w.appendChild(g);w.appendChild(t);box.appendChild(w);
-  });
-  avatars();
-  var h=S.hist.slice(Math.max(0,S.hist.length-5),S.hist.length-1).reverse();
-  $("last").innerHTML=h.map(function(n){return"<i>"+n+"</i>"}).join("");info();
-}
-function tap(v,ci){
-  if(S.over||S.marks[ci][v]||!WS||WS.readyState!==1)return;
-  WS.send(JSON.stringify({t:"mark",c:ci,n:v}));
-}
-function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
-function dlg(t,h){$("dt").textContent=t;$("db").innerHTML=h;var d=$("dlg");if(!d.open)d.showModal()}
-function again(){closing=true;if(WS)WS.close();S=null;pid="";try{sessionStorage.removeItem("loto_pid")}catch(e){}$("cards").innerHTML="";$("av").innerHTML="";$("last").innerHTML="";$("info").textContent="";$("msg").textContent="";showForm("")}
-$("go").onclick=function(){
-  var nm=$("nm").value.trim();
-  try{if(nm)localStorage.setItem("loto_name",nm)}catch(e){}
-  if(!$("ad").checked){$("err").textContent="Davam etmək üçün 18 yaşınızın tamam olduğunu təsdiqləyin";return}
-  joinOpts={name:nm||CFG.player};
-  if(!CFG.token){$("err").textContent="Əvvəlcə saytda hesabınıza daxil olun";return}
-  $("err").textContent="Bilet alınır...";
-  fetch("/api/loto/ticket",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+CFG.token},body:"{}"}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"Bilet alınmadı");$("err").textContent="Bilet alındı, oyuna qoşulursunuz...";connect()})}).catch(function(e){$("err").textContent=e.message});
-};
-$("home").onclick=function(){if(!S||S.over||confirm("Oyundan çıxmaq istəyirsiniz?"))again()};
-$("snd").onclick=function(){mute=!mute;this.textContent=mute?"🔇":"🔊"};
-$("dc").onclick=function(){$("dlg").close()};
-$("lb").onclick=function(){
-  dlg("Reytinq","<p>Yüklənir...</p>");
-  fetch(httpBase()+"/leaderboard").then(function(r){return r.json()}).then(function(rows){
-    $("db").innerHTML=rows.length?"<ol>"+rows.slice(0,10).map(function(r){return"<li>"+esc(r.name)+" — <b>"+r.score+"</b> ("+r.wins+" qələbə)</li>"}).join("")+"</ol>":"<p>Hələ nəticə yoxdur.</p>";
-  }).catch(function(){$("db").innerHTML="<p>Reytinq əlçatan deyil.</p>"});
-};
-setInterval(info,300);
-try{$("nm").value=CFG.player||localStorage.getItem("loto_name")||""}catch(e){$("nm").value=CFG.player}
-if(CFG.brand){$("brand").textContent=CFG.brand;$("brand2").textContent=CFG.brand;document.title=CFG.brand}
-</script>
+          <div class="host-wrap">
+            <svg class="host-svg" viewBox="0 0 240 300" role="img" aria-label="Canlı studiya aparıcısı">
+              <defs>
+                <linearGradient id="suit" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#1b1118"/><stop offset=".55" stop-color="#0d090e"/><stop offset="1" stop-color="#241018"/>
+                </linearGradient>
+                <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#f6c9a8"/><stop offset="1" stop-color="#d99a76"/>
+                </linearGradient>
+                <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#3a1620"/><stop offset=".5" stop-color="#160a10"/><stop offset="1" stop-color="#2c0e17"/>
+                </linearGradient>
+                <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffe6a8"/><stop offset="1" stop-color="#b07d1c"/>
+                </linearGradient>
+                <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+                  <stop offset="0" stop-color="#f4c15d" stop-opacity=".3"/><stop offset="1" stop-color="#f4c15d" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <ellipse cx="120" cy="290" rx="92" ry="10" fill="#000" opacity=".35"/>
+              <circle cx="120" cy="130" r="112" fill="url(#glow)"/>
+              <path d="M24 300 C24 228 62 200 120 200 C178 200 216 228 216 300 Z" fill="url(#suit)"/>
+              <path d="M92 202 L120 246 L148 202 C138 196 102 196 92 202 Z" fill="#f3e6d0"/>
+              <path d="M92 202 L120 246 L100 300 L64 300 C64 258 74 222 92 202 Z" fill="#130c11"/>
+              <path d="M148 202 L120 246 L140 300 L176 300 C176 258 166 222 148 202 Z" fill="#130c11"/>
+              <circle cx="82" cy="238" r="5" fill="url(#gold)"/>
+              <path d="M158 252 l18 -6 l4 14 l-18 6 z" fill="#b31023"/>
+              <path d="M102 166 h36 v34 c-10 10 -26 10 -36 0 z" fill="url(#skin)"/>
+              <ellipse cx="120" cy="120" rx="47" ry="56" fill="url(#skin)"/>
+              <ellipse cx="73" cy="124" rx="8" ry="12" fill="#dfa17f"/>
+              <ellipse cx="167" cy="124" rx="8" ry="12" fill="#dfa17f"/>
+              <path d="M120 48 C68 48 62 92 66 132 C70 172 76 186 86 196 C82 154 84 120 90 100 C104 108 136 108 150 100 C156 120 158 154 154 196 C164 186 170 172 174 132 C178 92 172 48 120 48 Z" fill="url(#hair)"/>
+              <path d="M120 52 C84 52 72 76 74 108 C80 86 96 76 120 76 C144 76 160 86 166 108 C168 76 156 52 120 52 Z" fill="#1c0b12"/>
+              <ellipse cx="102" cy="120" rx="5" ry="3.4" fill="#2a0e12"/>
+              <ellipse cx="138" cy="120" rx="5" ry="3.4" fill="#2a0e12"/>
+              <circle cx="103.5" cy="119" r="1.2" fill="#fff" opacity=".8"/>
+              <circle cx="139.5" cy="119" r="1.2" fill="#fff" opacity=".8"/>
+              <path d="M93 109 q9 -5 18 -1" stroke="#2a0e12" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+              <path d="M129 108 q9 -4 18 1" stroke="#2a0e12" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+              <path d="M120 124 q-4 10 2 13" stroke="#c98a68" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M108 147 q12 8 24 0 q-12 14 -24 0 z" fill="#a51228"/>
+              <path d="M74 94 C80 52 160 52 166 94" stroke="#0a0708" stroke-width="8" fill="none" stroke-linecap="round"/>
+              <path d="M76 94 C82 56 158 56 164 94" stroke="url(#gold)" stroke-width="2" fill="none" opacity=".7"/>
+              <rect x="62" y="108" width="20" height="34" rx="10" fill="#0b0709" stroke="url(#gold)" stroke-width="2"/>
+              <path d="M72 138 q-12 20 8 26" stroke="#0b0709" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <circle cx="82" cy="164" r="4" fill="url(#gold)"/>
+              <ellipse cx="94" cy="136" rx="8" ry="4" fill="#e88f86" opacity=".28"/>
+              <ellipse cx="146" cy="136" rx="8" ry="4" fill="#e88f86" opacity=".28"/>
+              <path d="M166 108 C172 128 170 156 160 178" stroke="#f4c15d" stroke-width="2" fill="none" opacity=".38"/>
+            </svg>
+            <div class="host-name"><b>Aysel</b><span>Live host</span></div>
+          </div>
+
+          <div class="machine-wrap">
+            <div class="machine">
+              <div class="machine-dome"><div class="machine-balls" id="machineBalls"></div><i class="glass-shine"></i></div>
+              <div class="machine-neck"></div>
+              <div class="machine-base"><span>REDX</span><em>LOTO 90</em></div>
+            </div>
+            <div class="draw-tube"></div>
+            <div class="drawn-ball" id="drawnBall"><span>?</span></div>
+          </div>
+
+          <div class="phrase-card">
+            <div class="phase-label" id="phaseLabel">STUDIYA HAZIR</div>
+            <div class="phase-title" id="phaseTitle">Oyunçu gözlənilir</div>
+            <div class="countdown" id="countdown">--:--</div>
+            <button class="buy-cta" id="buyBtn" type="button">Bilet al · ₼1</button>
+            <div class="buy-note" id="buyNote">Auto daub aktivdir</div>
+          </div>
+        </div>
+
+        <div class="ball-strip">
+          <div class="ball-strip-label">SON TOPLAR</div>
+          <div class="last-balls" id="lastBalls"><span class="empty-ball">—</span></div>
+          <div class="draw-counter"><b id="drawCount">0</b><span>/ 90 top</span></div>
+        </div>
+
+        <div class="board-card">
+          <div class="board-head">
+            <div><span class="kicker-dot"></span> TOP LÖVHƏSİ</div>
+            <div class="board-legend"><i class="called"></i> çəkilmiş <i class="latest"></i> son top</div>
+          </div>
+          <div class="number-board" id="numberBoard" aria-label="1-90 top lövhəsi"></div>
+        </div>
+      </section>
+
+      <aside class="studio-side">
+        <section class="panel tickets-panel">
+          <header class="panel-head">
+            <div><span class="kicker-dot"></span><h2>BİLETLƏRİM</h2></div>
+            <span class="auto-chip">AUTO DAUB</span>
+          </header>
+          <div class="tickets" id="tickets">
+            <div class="empty-state">
+              <b>Hələ biletin yoxdur.</b>
+              <span>“Bilet al” düyməsini bas və 15 rəqəmli kartını al.</span>
+            </div>
+          </div>
+          <div class="prize-grid">
+            <div><span>1 XƏTT</span><b>2×</b></div>
+            <div><span>2 XƏTT</span><b>5×</b></div>
+            <div><span>TAM KART</span><b>25×</b></div>
+          </div>
+          <p class="prize-note" id="prizeNote">Bilet qiyməti ₼1.00 · hər raundda maks. 2 bilet</p>
+        </section>
+
+        <section class="panel chat-panel">
+          <header class="panel-head">
+            <div><span class="kicker-dot"></span><h2>CANLI ÇAT</h2></div>
+            <span class="chat-live"><b></b> LIVE</span>
+          </header>
+          <div class="chat-list" id="chatList" aria-live="polite"></div>
+          <form class="chat-form" id="chatForm">
+            <input id="chatInput" maxlength="140" placeholder="Mesaj yaz..." autocomplete="off">
+            <button type="submit" aria-label="Göndər">➤</button>
+          </form>
+          <p class="chat-gate" id="chatGate" hidden>Çatda yazmaq üçün <a href="/?login=1&next=%2Floto.html">hesabına daxil ol</a>.</p>
+        </section>
+
+        <section class="panel history-panel">
+          <header class="panel-head">
+            <div><span class="kicker-dot"></span><h2>SON RAUNDLAR</h2></div>
+            <span class="history-count" id="historyCount">0</span>
+          </header>
+          <div class="history-list" id="historyList">
+            <div class="empty-state small"><span>Hələ nəticə yoxdur. İlk raund başlayır.</span></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="loto-foot">
+      <span>18+ · Məsuliyyətli oyun</span>
+      <span>REDX Live Studio · demo/staging rejim</span>
+      <a href="/">redplayco.com</a>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="login-gate" id="loginGate" hidden>
+    <div class="gate-box">
+      <button class="gate-close" id="gateClose" type="button" aria-label="Bağla">×</button>
+      <span class="gate-kicker">REDX LIVE LOTO</span>
+      <h2>Oyuna qoşul</h2>
+      <p>Bilet almaq və çatda yazmaq üçün hesabına daxil ol. Qonaq kimi də izləyə bilərsən.</p>
+      <a class="gate-primary" href="/?login=1&next=%2Floto.html">Giriş et</a>
+      <button class="gate-quiet" id="gateGuest" type="button">Qonaq kimi izlə</button>
+    </div>
+  </div>
+
+  <dialog class="rules-dialog" id="rulesDialog">
+    <button class="rules-close" id="rulesClose" type="button" aria-label="Bağla">×</button>
+    <span class="gate-kicker">REDX LIVE LOTO</span>
+    <h2>Oyun qaydaları</h2>
+    <ol>
+      <li>Hər bilet 3 sıra × 9 sütundan ibarətdir və 15 rəqəm daşıyır.</li>
+      <li>Studiyada 1–90 arası toplar çəkilir. Çəkilən rəqəm avtomatik işarələnir (auto daub).</li>
+      <li><b>1 xətt</b> — sıradakı 5 rəqəm tamamlandıqda bilet qiymətinin 2 qatı.</li>
+      <li><b>2 xətt</b> — iki sıra tamamlandıqda bilet qiymətinin 5 qatı.</li>
+      <li><b>Tam kart</b> — 15 rəqəmin hamısı tamamlandıqda bilet qiymətinin 25 qatı.</li>
+      <li>Qalibiyyətlər dərhal bonus balansa və ya əsas balansa (biletin ödəniş mənbəyinə uyğun) yazılır.</li>
+      <li>Platforma hazırda demo/staging rejimindədir. 18+ məsuliyyətli oyun.</li>
+    </ol>
+    <button class="gate-primary" id="rulesOk" type="button">Anladım</button>
+  </dialog>
+
+  <script src="loto-live.js?v=1"></script>
 </body>
 </html>
-
