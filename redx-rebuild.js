@@ -412,29 +412,100 @@ $('#closeGame').onclick = () => {
     ? config.rewards
     : [{ label: 'Bonus', amount: 0 }];
   const per = 360 / rewards.length;
+  const labelFont = rewards.length > 12 ? 8 : rewards.length > 9 ? 10 : rewards.length > 6 ? 12 : 15;
   let rotation = 0;
+
+  const polar = (r, deg) => {
+    const a = ((deg - 90) * Math.PI) / 180;
+    return `${(200 + r * Math.cos(a)).toFixed(2)} ${(200 + r * Math.sin(a)).toFixed(2)}`;
+  };
+  const segPalette = [
+    ['#9a1526', '#44060e'],
+    ['#221a20', '#070507'],
+    ['#c2913a', '#65430e'],
+    ['#3a1019', '#0c0509'],
+    ['#7c0a16', '#320307'],
+    ['#171217', '#060405']
+  ];
+  const segDefs = [];
+  const segPaths = rewards.map((_, i) => {
+    const a0 = i * per;
+    const a1 = (i + 1) * per;
+    const [c0, c1] = segPalette[i % segPalette.length];
+    segDefs.push(`<linearGradient id="wheelSeg${i}" x1="0" y1="0" x2="0.72" y2="1"><stop offset="0" stop-color="${c0}"/><stop offset="1" stop-color="${c1}"/></linearGradient>`);
+    const d = rewards.length === 1
+      ? 'M 200 200 m -172 0 a 172 172 0 1 0 344 0 a 172 172 0 1 0 -344 0 Z'
+      : `M 200 200 L ${polar(172, a0)} A 172 172 0 ${per > 180 ? 1 : 0} 1 ${polar(172, a1)} Z`;
+    return `<path d="${d}" fill="url(#wheelSeg${i})" stroke="rgba(244,193,93,0.42)" stroke-width="1.6" stroke-linejoin="round"/>`;
+  }).join('');
+
+  let bulbA = '';
+  let bulbB = '';
+  for (let i = 0; i < 24; i += 1) {
+    const a = ((i * 15 - 90) * Math.PI) / 180;
+    const x = (200 + 187 * Math.cos(a)).toFixed(2);
+    const y = (200 + 187 * Math.sin(a)).toFixed(2);
+    const bulb = `<g><circle cx="${x}" cy="${y}" r="6" fill="rgba(244,193,93,0.22)"/><circle cx="${x}" cy="${y}" r="3.2" fill="#ffe9b8"/></g>`;
+    if (i % 2) bulbA += bulb; else bulbB += bulb;
+  }
+
+  const wheelFace = `
+    <svg viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id="wheelRim" cx="34%" cy="24%" r="78%">
+          <stop offset="0" stop-color="#fff4d2"/>
+          <stop offset="0.28" stop-color="#f2c76a"/>
+          <stop offset="0.52" stop-color="#c1912f"/>
+          <stop offset="0.74" stop-color="#6f480d"/>
+          <stop offset="1" stop-color="#2c1a05"/>
+        </radialGradient>
+        <radialGradient id="wheelHubPlate" cx="50%" cy="38%" r="62%">
+          <stop offset="0" stop-color="#3a2610"/>
+          <stop offset="0.7" stop-color="#160d08"/>
+          <stop offset="1" stop-color="#080506"/>
+        </radialGradient>
+        ${segDefs.join('')}
+      </defs>
+      <circle cx="200" cy="200" r="198" fill="url(#wheelRim)"/>
+      <circle cx="200" cy="200" r="193" fill="none" stroke="rgba(46,26,4,0.55)" stroke-width="2"/>
+      <circle cx="200" cy="200" r="176" fill="#080507"/>
+      ${segPaths}
+      <circle cx="200" cy="200" r="172" fill="none" stroke="rgba(255,232,175,0.55)" stroke-width="2"/>
+      <circle cx="200" cy="200" r="62" fill="url(#wheelHubPlate)" stroke="rgba(244,193,93,0.5)" stroke-width="2"/>
+      <g class="wheel-bulbs-a">${bulbA}</g>
+      <g class="wheel-bulbs-b">${bulbB}</g>
+    </svg>
+  `;
 
   const modalBox = document.createElement('div');
   modalBox.className = 'wheel-modal';
   modalBox.innerHTML = `
     <div class="wheel-box">
-      <button class="wheel-close" aria-label="Bağla">×</button>
-      <div class="wheel-eyebrow">REDX ORIGINAL</div>
-      <div class="wheel-title">LUCKY WHEEL</div>
+      <div class="wheel-room" aria-hidden="true"></div>
+      <button class="wheel-close" aria-label="Bağla" type="button">×</button>
+      <div class="wheel-eyebrow">REDX ORIGINAL · CANLI STUDIYA</div>
+      <div class="wheel-title">LUCKY <em>WHEEL</em></div>
       <div class="wheel-stage">
-        <div class="wheel-pointer">▼</div>
-        <div class="wheel-disc">
-          <div class="wheel-labels">
-            ${rewards.map((r, i) => {
-              const label = r.label || (r.amount ? '₼' + r.amount : 'CƏHD');
-              return `<span style="--r:${(i + 0.5) * per - 90}deg">${esc(label)}</span>`;
-            }).join('')}
+        <div class="wheel-floor" aria-hidden="true"></div>
+        <div class="wheel-stand" aria-hidden="true"></div>
+        <div class="wheel-rig">
+          <div class="wheel-disc">${wheelFace}
+            <div class="wheel-labels" style="--fs:${labelFont}px">
+              ${rewards.map((r, i) => {
+                const label = r.label || (r.amount ? '₼' + r.amount : 'CƏHD');
+                return `<span style="--r:${(i + 0.5) * per}deg">${esc(label)}</span>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="wheel-pointer" aria-hidden="true"></div>
+          <div class="wheel-hub">
+            <button class="wheel-spin" type="button">SPIN</button>
           </div>
         </div>
-        <button class="wheel-spin">SPIN</button>
       </div>
-      <div class="wheel-result">Şansını sına və bonus qazan.</div>
+      <div class="wheel-result" role="status" aria-live="polite">Şansını sına və bonus qazan.</div>
       <div class="wheel-note">Gündəlik limit: ${esc(config.dailyLimit)} fırlatma</div>
+      <div class="wheel-fx" aria-hidden="true"></div>
     </div>
   `;
   document.body.appendChild(modalBox);
@@ -442,6 +513,7 @@ $('#closeGame').onclick = () => {
   const disc = $('.wheel-disc', modalBox);
   const spin = $('.wheel-spin', modalBox);
   const result = $('.wheel-result', modalBox);
+  const fx = $('.wheel-fx', modalBox);
 
   function openWheel() {
     modalBox.classList.add('open');
@@ -461,6 +533,23 @@ $('#closeGame').onclick = () => {
     if (code === 'No rewards configured') return 'Çarx bonusları hələ təyin edilməyib.';
     if (code === 'Unauthorized' || code === 'Invalid token') return 'Sessiyanın vaxtı bitib. Yenidən daxil olun.';
     return 'Çarx fırladıla bilmədi. Bir az sonra yenidən cəhd edin.';
+  }
+
+  function burstConfetti() {
+    if (!fx) return;
+    const colors = ['#f4c15d', '#ffe9b8', '#e11d2e', '#ff6b7a', '#fff6e0'];
+    fx.innerHTML = '';
+    for (let i = 0; i < 30; i += 1) {
+      const bit = document.createElement('i');
+      bit.style.setProperty('--x', `${6 + Math.random() * 88}%`);
+      bit.style.setProperty('--dx', `${Math.random() * 240 - 120}px`);
+      bit.style.setProperty('--dy', `${120 + Math.random() * 230}px`);
+      bit.style.setProperty('--rot', `${Math.random() * 720 - 360}deg`);
+      bit.style.setProperty('--c', colors[i % colors.length]);
+      bit.style.setProperty('--d', `${(Math.random() * 0.4).toFixed(2)}s`);
+      fx.appendChild(bit);
+    }
+    setTimeout(() => { fx.innerHTML = ''; }, 2400);
   }
 
   spin.onclick = async () => {
@@ -488,18 +577,26 @@ $('#closeGame').onclick = () => {
         return;
       }
 
-      const idx = Math.max(0, rewards.findIndex(x => (x.label || '') === d.spin.reward_label));
+      const found = rewards.findIndex(x => (x.label || '') === d.spin.reward_label);
+      const idx = found < 0 ? 0 : found;
       const target = ((360 - (idx + 0.5) * per) % 360 + 360) % 360;
-      rotation += 1440 + target;
+      const current = ((rotation % 360) + 360) % 360;
+      const delta = ((target - current) % 360 + 360) % 360;
+      rotation += 1440 + delta;
       disc.style.transform = `rotate(${rotation}deg)`;
 
       setTimeout(() => {
         const amount = Number(d.spin.reward_amount || 0);
-        result.textContent = amount > 0
-          ? `Təbriklər! ${d.spin.reward_label} bonus qazandınız 🎉`
-          : 'Bu dəfə bonus çıxmadı. Yenidən cəhd edin.';
+        if (amount > 0) {
+          result.textContent = `Təbriklər! ${d.spin.reward_label} bonus qazandınız 🎉`;
+          result.classList.add('win');
+          burstConfetti();
+          setTimeout(() => result.classList.remove('win'), 3400);
+        } else {
+          result.textContent = 'Bu dəfə bonus çıxmadı. Yenidən cəhd edin.';
+        }
         spin.disabled = false;
-      }, 4600);
+      }, 4800);
     } catch {
       result.textContent = 'Bağlantı xətası. Yenidən cəhd edin.';
       spin.disabled = false;
