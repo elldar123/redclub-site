@@ -697,8 +697,21 @@ a { transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease; }
 .game-visual {
   position: relative;
   overflow: hidden;
+  display: grid;
+  place-items: center;
   aspect-ratio: 3 / 4;
   background: #0a080c;
+}
+.game-visual::before {
+  content: '';
+  position: absolute;
+  inset: -16%;
+  background-image: var(--art);
+  background-position: center;
+  background-size: cover;
+  filter: blur(20px) brightness(0.38) saturate(1.2);
+  transform: scale(1.08);
+  pointer-events: none;
 }
 .game-visual::after {
   content: '';
@@ -706,22 +719,26 @@ a { transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease; }
   right: 0;
   bottom: 0;
   left: 0;
-  height: 42%;
-  background: linear-gradient(180deg, transparent, rgba(7, 6, 10, 0.62));
+  z-index: 2;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgba(7, 6, 10, 0.42));
   pointer-events: none;
 }
 .game-art-img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   transition: transform 0.6s ease;
 }
-.game-card:hover .game-art-img { transform: scale(1.07); }
+.game-card:hover .game-art-img { transform: scale(1.04); }
 .demo-chip {
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 2;
+  z-index: 3;
   padding: 4px 8px;
   color: var(--gold-2);
   border: 1px solid rgba(244, 193, 93, 0.35);

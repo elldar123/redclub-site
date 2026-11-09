@@ -68,6 +68,15 @@ function providerLabel(p) {
   return PROVIDERS[p] || (p ? String(p) : 'REDX');
 }
 
+function artUrl(g) {
+  return g.iconurl3 || g.iconurl2 || g.iconurl1 || g.iconurl || '';
+}
+
+function fallbackArt(g) {
+  const primary = artUrl(g);
+  return [g.iconurl2, g.iconurl1, g.iconurl].find(u => u && u !== primary) || '';
+}
+
 function showToast(message) {
   if (!toast) return;
   toast.textContent = message;
@@ -96,10 +105,13 @@ function render() {
     return;
   }
 
-  grid.innerHTML = items.map((g, i) => `
+  grid.innerHTML = items.map((g, i) => {
+    const art = artUrl(g);
+    const fallback = fallbackArt(g);
+    return `
     <article class="game-card" style="--i:${i % 12}" data-provider="${esc(g.provider || 'pragmatic')}">
-      <div class="game-visual">
-        <img class="game-art-img" loading="lazy" src="${esc(g.iconurl3 || g.iconurl2 || g.iconurl1 || '')}" alt="${esc(g.name)}">
+      <div class="game-visual" style="--art:url('${esc(art)}')">
+        <img class="game-art-img" loading="lazy" src="${esc(art)}" alt="${esc(g.name)}"${fallback ? ` data-fallback="${esc(fallback)}" onerror="this.onerror=null;this.src=this.dataset.fallback"` : ''}>
         <span class="demo-chip">DEMO</span>
       </div>
       <div class="game-info">
@@ -110,7 +122,8 @@ function render() {
         <button class="play-btn" data-id="${esc(g.gameid)}" data-provider="${esc(g.provider || 'pragmatic')}" aria-label="${esc(g.name)} oyna">▶</button>
       </div>
     </article>
-  `).join('');
+  `;
+  }).join('');
 
   $$('.play-btn', grid).forEach(b => { b.onclick = () => launch(b); });
   $('#loadMore').style.display = state.shown < list.length ? 'block' : 'none';
@@ -155,7 +168,7 @@ async function loadGames() {
 
 function showFeature(g) {
   if (!g) return;
-  $('#featureImage').style.backgroundImage = `url('${g.iconurl3 || g.iconurl2 || g.iconurl1 || ''}')`;
+  $('#featureImage').style.backgroundImage = `url('${artUrl(g)}')`;
   $('#featureName').textContent = g.name;
   if ($('#featureProvider')) $('#featureProvider').textContent = providerLabel(g.provider);
   const index = Math.max(0, state.games.indexOf(g));
