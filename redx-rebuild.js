@@ -110,8 +110,8 @@ function render() {
     const fallback = fallbackArt(g);
     return `
     <article class="game-card" style="--i:${i % 12}" data-provider="${esc(g.provider || 'pragmatic')}">
-      <div class="game-visual">
-        <img class="game-art-img" loading="lazy" src="${esc(art)}" alt="${esc(g.name)}"${fallback ? ` data-fallback="${esc(fallback)}" onerror="this.onerror=null;this.src=this.dataset.fallback"` : ''}>
+      <div class="game-visual" style="--art:url(&quot;${esc(art)}&quot;)">
+        <img class="game-art-img" loading="lazy" src="${esc(art)}" alt="${esc(g.name)}"${fallback ? ` data-fallback="${esc(fallback)}" onerror="this.onerror=null;this.src=this.dataset.fallback;if(this.parentNode){this.parentNode.style.setProperty('--art','url(&quot;'+this.dataset.fallback+'&quot;)')}"` : ''}>
         <span class="demo-chip">DEMO</span>
       </div>
       <div class="game-info">
