@@ -110,14 +110,14 @@ function render() {
     const fallback = fallbackArt(g);
     return `
     <article class="game-card" style="--i:${i % 12}" data-provider="${esc(g.provider || 'pragmatic')}">
-      <div class="game-visual" style="--art:url('${esc(art)}')">
+      <div class="game-visual">
         <img class="game-art-img" loading="lazy" src="${esc(art)}" alt="${esc(g.name)}"${fallback ? ` data-fallback="${esc(fallback)}" onerror="this.onerror=null;this.src=this.dataset.fallback"` : ''}>
         <span class="demo-chip">DEMO</span>
       </div>
       <div class="game-info">
         <div class="game-meta">
           <h3>${esc(g.name)}</h3>
-          <span>${esc(providerLabel(g.provider))}</span>
+          <span>${providerLabel(g.provider)}</span>
         </div>
         <button class="play-btn" data-id="${esc(g.gameid)}" data-provider="${esc(g.provider || 'pragmatic')}" aria-label="${esc(g.name)} oyna">▶</button>
       </div>
@@ -125,7 +125,15 @@ function render() {
   `;
   }).join('');
 
-  $$('.play-btn', grid).forEach(b => { b.onclick = () => launch(b); });
+  $$('.play-btn', grid).forEach(b => {
+    b.onclick = e => { e.stopPropagation(); launch(b); };
+  });
+  $$('.game-card', grid).forEach(card => {
+    card.onclick = () => {
+      const b = card.querySelector('.play-btn');
+      if (b) launch(b);
+    };
+  });
   $('#loadMore').style.display = state.shown < list.length ? 'block' : 'none';
 }
 
