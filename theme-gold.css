@@ -1,9 +1,10 @@
-﻿:root{--green:#ffd21f;--purple:#d9232e;--gold:#ffd21f;--gold-soft:#ffe77a}
-body{background:radial-gradient(ellipse 90% 55% at 50% -5%,#ffd21f18,transparent 60%),#0e1218}
-.brand i,.kicker,.hero h1 em{color:var(--gold)}
+﻿:root{--green:#d9232e;--purple:#ffd21f;--gold:#ffd21f;--gold-soft:#ffe77a}
+body{background:radial-gradient(ellipse 90% 55% at 50% -5%,#d9232e18,transparent 60%),#0e1218}
+.brand i,.hero h1 em{color:#d9232e}
+.kicker{color:var(--gold)}
 .kicker b,nav a.active:after{background:var(--gold)}
-.register,.primary{background:var(--gold);color:#17120a}
-.register:hover,.primary:hover{background:var(--gold-soft);box-shadow:0 8px 24px #ffd21f35}
+.register,.primary{background:#d9232e;color:#fff}
+.register:hover,.primary:hover{background:#ef3540;box-shadow:0 8px 24px #d9232e35}
 .filter.active,.view.active{border-color:var(--gold);color:var(--gold)}
 .game-card:hover{border-color:var(--gold);box-shadow:0 14px 36px #ffd21f18}
 .wheel-top-button{background:#d9232e!important;border:1px solid var(--gold)!important;color:#fff!important}
