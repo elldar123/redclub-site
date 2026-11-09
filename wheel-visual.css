@@ -110,55 +110,28 @@
 .wheel-title em { font-style: normal; color: #ff4053; text-shadow: 0 2px 0 #4a0309, 0 0 30px rgba(225, 29, 46, 0.4); }
 
 .wheel-stage {
-  --wheel-size: min(430px, 82vw);
+  --wheel-size: min(432px, 84vw);
   position: relative;
   width: var(--wheel-size);
   aspect-ratio: 1;
-  margin: 14px auto 18px;
-  perspective: 1100px;
-  perspective-origin: 50% 42%;
+  margin: 12px auto 16px;
 }
 .wheel-floor {
   position: absolute;
-  left: 2%;
-  right: 2%;
-  bottom: -7%;
-  height: 20%;
+  left: -6%;
+  right: -6%;
+  bottom: -12%;
+  height: 30%;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(244, 193, 93, 0.22), rgba(225, 29, 46, 0.08) 46%, transparent 72%);
-  filter: blur(10px);
+  background: radial-gradient(ellipse at 50% 50%, rgba(244, 193, 93, 0.2), rgba(225, 29, 46, 0.12) 42%, rgba(60, 12, 40, 0.1) 62%, transparent 76%);
+  filter: blur(14px);
   pointer-events: none;
-}
-.wheel-stand {
-  position: absolute;
-  left: 50%;
-  bottom: -5%;
-  z-index: 0;
-  width: 34%;
-  height: 24%;
-  transform: translateX(-50%);
-  background:
-    linear-gradient(180deg, rgba(255, 223, 158, 0.24), transparent 18%),
-    linear-gradient(180deg, #3a260d 0%, #171008 44%, #080606 100%);
-  clip-path: polygon(24% 0, 76% 0, 100% 100%, 0 100%);
-  box-shadow: 0 30px 50px rgba(0, 0, 0, 0.65);
-}
-.wheel-stand::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #7c5412, #ffe3a3 42%, #c9962c 58%, #6a430c);
 }
 
 .wheel-rig {
   position: absolute;
-  inset: 4.5%;
+  inset: 0;
   z-index: 1;
-  transform-style: preserve-3d;
-  transform: rotateX(9deg);
 }
 .wheel-rig::after {
   content: '';
@@ -188,29 +161,17 @@
 .wheel-bulbs-a { animation: wheelBulb 1.5s ease-in-out infinite; }
 .wheel-bulbs-b { animation: wheelBulb 1.5s ease-in-out 0.75s infinite; }
 
-.wheel-labels {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-}
-.wheel-labels span {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 28%;
-  margin-left: -14%;
-  transform: rotate(var(--r)) translateY(calc(var(--wheel-size) * -0.312)) rotate(calc(var(--r) * -1));
-  color: #ffe9b8;
-  font: 800 var(--fs, 15px)/1 'Barlow Condensed', sans-serif;
-  letter-spacing: 0.03em;
-  text-align: center;
-  text-transform: uppercase;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.82), 0 0 12px rgba(0, 0, 0, 0.45);
-}
-.wheel-labels span.gold-seg {
-  color: #2a1602;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.38), 0 2px 3px rgba(0, 0, 0, 0.25);
+/* radial prize numbers drawn inside the SVG so they turn with the disc */
+.wheel-num {
+  fill: #fffdf5;
+  font-family: 'Barlow Condensed', 'Sora', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  paint-order: stroke fill;
+  stroke: rgba(0, 0, 0, 0.34);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
 }
 
 .wheel-pointer {
@@ -254,9 +215,9 @@
   z-index: 6;
   display: grid;
   place-items: center;
-  width: 24%;
+  width: 22%;
   aspect-ratio: 1;
-  transform: translate(-50%, -50%) translateZ(26px);
+  transform: translate(-50%, -50%);
   border: 2px solid #f8d488;
   border-radius: 50%;
   background:
@@ -353,7 +314,6 @@
   .wheel-stage { --wheel-size: min(410px, 84vw); margin-top: 10px; }
   .wheel-title { font-size: clamp(27px, 8.6vw, 36px); }
   .wheel-eyebrow { font-size: 7px; letter-spacing: 0.22em; }
-  .wheel-labels span { width: 34%; margin-left: -17%; transform: rotate(var(--r)) translateY(calc(var(--wheel-size) * -0.305)) rotate(calc(var(--r) * -1)); }
   .wheel-result { font-size: 12px; }
   .wheel-close { top: 10px; right: 10px; width: 32px; height: 32px; font-size: 21px; }
 }

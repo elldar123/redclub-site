@@ -411,8 +411,13 @@ $('#closeGame').onclick = () => {
   const rewards = Array.isArray(config.rewards) && config.rewards.length
     ? config.rewards
     : [{ label: 'Bonus', amount: 0 }];
-  const per = 360 / rewards.length;
-  const labelFont = rewards.length > 12 ? 8 : rewards.length > 9 ? 10 : rewards.length > 6 ? 12 : 15;
+
+  /* Reference layout: 16 narrow wedges. Repeat the configured rewards so every
+     reward owns the same number of wedges and keeps its own colour. */
+  const repeats = Math.max(1, Math.round(16 / rewards.length));
+  const segCount = rewards.length * repeats;
+  const segReward = Array.from({ length: segCount }, (_, s) => s % rewards.length);
+  const per = 360 / segCount;
   let rotation = 0;
 
   const polar = (r, deg) => {
@@ -420,58 +425,96 @@ $('#closeGame').onclick = () => {
     return `${(200 + r * Math.cos(a)).toFixed(2)} ${(200 + r * Math.sin(a)).toFixed(2)}`;
   };
   const segPalette = [
-    ['#9a1526', '#44060e'],
-    ['#221a20', '#070507'],
-    ['#c2913a', '#65430e'],
-    ['#3a1019', '#0c0509'],
-    ['#7c0a16', '#320307'],
-    ['#171217', '#060405']
+    ['#2d8cff', '#0a51bb'],
+    ['#23c95d', '#057a2d'],
+    ['#d24bff', '#7d0a9e'],
+    ['#ff3b3f', '#9d0509'],
+    ['#ff2f8f', '#8d0343'],
+    ['#ffb020', '#8a4d00']
   ];
-  const segDefs = [];
-  const segPaths = rewards.map((_, i) => {
-    const a0 = i * per;
-    const a1 = (i + 1) * per;
+  const segDefs = rewards.map((_, i) => {
     const [c0, c1] = segPalette[i % segPalette.length];
-    segDefs.push(`<linearGradient id="wheelSeg${i}" x1="0" y1="0" x2="0.72" y2="1"><stop offset="0" stop-color="${c0}"/><stop offset="1" stop-color="${c1}"/></linearGradient>`);
-    const d = rewards.length === 1
-      ? 'M 200 200 m -172 0 a 172 172 0 1 0 344 0 a 172 172 0 1 0 -344 0 Z'
-      : `M 200 200 L ${polar(172, a0)} A 172 172 0 ${per > 180 ? 1 : 0} 1 ${polar(172, a1)} Z`;
-    return `<path d="${d}" fill="url(#wheelSeg${i})" stroke="rgba(244,193,93,0.42)" stroke-width="1.6" stroke-linejoin="round"/>`;
+    return `<radialGradient id="wheelSeg${i}" cx="200" cy="200" r="181" gradientUnits="userSpaceOnUse">
+        <stop offset="0.05" stop-color="${c0}" stop-opacity="0.55"/>
+        <stop offset="0.22" stop-color="${c0}"/>
+        <stop offset="0.86" stop-color="${c1}"/>
+        <stop offset="1" stop-color="${c1}"/>
+      </radialGradient>`;
+  }).join('');
+  const segPaths = segReward.map((ri, s) => {
+    const a0 = s * per;
+    const a1 = (s + 1) * per;
+    const d = segCount === 1
+      ? 'M 200 200 m -181 0 a 181 181 0 1 0 362 0 a 181 181 0 1 0 -362 0 Z'
+      : `M 200 200 L ${polar(181, a0)} A 181 181 0 ${per > 180 ? 1 : 0} 1 ${polar(181, a1)} Z`;
+    return `<path d="${d}" fill="url(#wheelSeg${ri})" stroke="rgba(255,246,224,0.78)" stroke-width="3" stroke-linejoin="round"/>`;
+  }).join('');
+
+  const labelText = segReward.map((ri, s) => {
+    const r = rewards[ri];
+    const label = String(r.label || (r.amount ? '₼' + r.amount : 'CƏHD'));
+    const size = label.length > 4 ? 21 : 30;
+    const mid = (s + 0.5) * per;
+    return `<text class="wheel-num" font-size="${size}" transform="rotate(${mid.toFixed(3)} 200 200) translate(200 79) rotate(-90)" text-anchor="middle" dominant-baseline="central">${esc(label)}</text>`;
   }).join('');
 
   let bulbA = '';
   let bulbB = '';
-  for (let i = 0; i < 24; i += 1) {
-    const a = ((i * 15 - 90) * Math.PI) / 180;
-    const x = (200 + 187 * Math.cos(a)).toFixed(2);
-    const y = (200 + 187 * Math.sin(a)).toFixed(2);
-    const bulb = `<g><circle cx="${x}" cy="${y}" r="6" fill="rgba(244,193,93,0.22)"/><circle cx="${x}" cy="${y}" r="3.2" fill="#ffe9b8"/></g>`;
+  for (let i = 0; i < 16; i += 1) {
+    const a = ((i * per + per / 2 - 90) * Math.PI) / 180;
+    const x = (200 + 190.5 * Math.cos(a)).toFixed(2);
+    const y = (200 + 190.5 * Math.sin(a)).toFixed(2);
+    const bulb = `<g><circle cx="${x}" cy="${y}" r="5.6" fill="rgba(90,58,6,0.55)"/><circle cx="${x}" cy="${y}" r="3.9" fill="url(#wheelStud)"/></g>`;
     if (i % 2) bulbA += bulb; else bulbB += bulb;
   }
 
   const wheelFace = `
     <svg viewBox="0 0 400 400" aria-hidden="true" focusable="false">
       <defs>
-        <radialGradient id="wheelRim" cx="34%" cy="24%" r="78%">
-          <stop offset="0" stop-color="#fff4d2"/>
-          <stop offset="0.28" stop-color="#f2c76a"/>
-          <stop offset="0.52" stop-color="#c1912f"/>
-          <stop offset="0.74" stop-color="#6f480d"/>
-          <stop offset="1" stop-color="#2c1a05"/>
+        <radialGradient id="wheelRim" cx="34%" cy="20%" r="82%">
+          <stop offset="0" stop-color="#fff8e0"/>
+          <stop offset="0.24" stop-color="#f7d489"/>
+          <stop offset="0.46" stop-color="#e0a63c"/>
+          <stop offset="0.68" stop-color="#a9711a"/>
+          <stop offset="0.86" stop-color="#5f3a07"/>
+          <stop offset="1" stop-color="#2b1803"/>
         </radialGradient>
-        <radialGradient id="wheelHubPlate" cx="50%" cy="38%" r="62%">
-          <stop offset="0" stop-color="#3a2610"/>
-          <stop offset="0.7" stop-color="#160d08"/>
-          <stop offset="1" stop-color="#080506"/>
+        <radialGradient id="wheelStud" cx="36%" cy="30%" r="72%">
+          <stop offset="0" stop-color="#fff8dd"/>
+          <stop offset="0.5" stop-color="#f2c76a"/>
+          <stop offset="1" stop-color="#8a5a10"/>
         </radialGradient>
-        ${segDefs.join('')}
+        <radialGradient id="wheelHubPlate" cx="42%" cy="30%" r="76%">
+          <stop offset="0" stop-color="#fff6d5"/>
+          <stop offset="0.34" stop-color="#f0c264"/>
+          <stop offset="0.62" stop-color="#b8811f"/>
+          <stop offset="0.84" stop-color="#6b430b"/>
+          <stop offset="1" stop-color="#332003"/>
+        </radialGradient>
+        <radialGradient id="wheelShade" cx="200" cy="200" r="181" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.2"/>
+          <stop offset="0.36" stop-color="#ffffff" stop-opacity="0"/>
+          <stop offset="0.82" stop-color="#000000" stop-opacity="0.08"/>
+          <stop offset="1" stop-color="#000000" stop-opacity="0.34"/>
+        </radialGradient>
+        <radialGradient id="wheelGloss" cx="30%" cy="14%" r="74%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+          <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.07"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+        ${segDefs}
       </defs>
-      <circle cx="200" cy="200" r="198" fill="url(#wheelRim)"/>
-      <circle cx="200" cy="200" r="193" fill="none" stroke="rgba(46,26,4,0.55)" stroke-width="2"/>
-      <circle cx="200" cy="200" r="176" fill="#080507"/>
+      <circle cx="200" cy="200" r="199" fill="url(#wheelRim)"/>
+      <circle cx="200" cy="200" r="196" fill="none" stroke="rgba(64,36,4,0.55)" stroke-width="1.6"/>
+      <circle cx="200" cy="200" r="183" fill="none" stroke="rgba(255,245,215,0.5)" stroke-width="1.4"/>
       ${segPaths}
-      <circle cx="200" cy="200" r="172" fill="none" stroke="rgba(255,232,175,0.55)" stroke-width="2"/>
-      <circle cx="200" cy="200" r="62" fill="url(#wheelHubPlate)" stroke="rgba(244,193,93,0.5)" stroke-width="2"/>
+      <circle cx="200" cy="200" r="181" fill="url(#wheelShade)"/>
+      <circle cx="200" cy="200" r="181" fill="url(#wheelGloss)"/>
+      <circle cx="200" cy="200" r="181" fill="none" stroke="rgba(255,248,226,0.9)" stroke-width="2.4"/>
+      <circle cx="200" cy="200" r="52" fill="url(#wheelHubPlate)" stroke="rgba(58,33,3,0.55)" stroke-width="2"/>
+      <circle cx="200" cy="200" r="47" fill="none" stroke="rgba(255,248,224,0.72)" stroke-width="1.4"/>
+      <circle cx="200" cy="200" r="181" fill="none" stroke="rgba(0,0,0,0.32)" stroke-width="1.2"/>
+      <g class="wheel-nums">${labelText}</g>
       <g class="wheel-bulbs-a">${bulbA}</g>
       <g class="wheel-bulbs-b">${bulbB}</g>
     </svg>
@@ -487,16 +530,8 @@ $('#closeGame').onclick = () => {
       <div class="wheel-title">LUCKY <em>WHEEL</em></div>
       <div class="wheel-stage">
         <div class="wheel-floor" aria-hidden="true"></div>
-        <div class="wheel-stand" aria-hidden="true"></div>
         <div class="wheel-rig">
-          <div class="wheel-disc">${wheelFace}
-            <div class="wheel-labels" style="--fs:${labelFont}px">
-              ${rewards.map((r, i) => {
-                const label = r.label || (r.amount ? '₼' + r.amount : 'CƏHD');
-                return `<span style="--r:${(i + 0.5) * per}deg">${esc(label)}</span>`;
-              }).join('')}
-            </div>
-          </div>
+          <div class="wheel-disc">${wheelFace}</div>
           <div class="wheel-pointer" aria-hidden="true"></div>
           <div class="wheel-hub">
             <button class="wheel-spin" type="button">SPIN</button>
@@ -579,7 +614,9 @@ $('#closeGame').onclick = () => {
 
       const found = rewards.findIndex(x => (x.label || '') === d.spin.reward_label);
       const idx = found < 0 ? 0 : found;
-      const target = ((360 - (idx + 0.5) * per) % 360 + 360) % 360;
+      const pool = segReward.reduce((acc, ri, s) => (ri === idx ? acc.concat(s) : acc), []);
+      const hit = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 0;
+      const target = ((360 - (hit + 0.5) * per) % 360 + 360) % 360;
       const current = ((rotation % 360) + 360) % 360;
       const delta = ((target - current) % 360 + 360) % 360;
       rotation += 1440 + delta;
